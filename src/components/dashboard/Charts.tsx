@@ -213,6 +213,7 @@ export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
         <XAxis dataKey="env" {...axis} />
         <YAxis {...axis} />
         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Bar dataKey="count" radius={[6, 6, 0, 0]}>
           {data.map((d) => (
             <Cell key={d.env} fill={COLORS[d.env as Environment]} />
           ))}

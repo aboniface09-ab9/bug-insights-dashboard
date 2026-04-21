@@ -144,6 +144,35 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
   );
 }
 
+export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
+  const stages: Environment[] = ["DEV", "SIT", "UAT", "PROD"];
+  const data = stages.map((s) => ({
+    stage: s,
+    count: rows.filter((r) => r.environment === s).length,
+  }));
+  const max = Math.max(...data.map((d) => d.count), 1);
+
+  return (
+    <ChartCard title="QA Funnel" subtitle="Defect catch rate across environments">
+      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 0 }}>
+        <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" {...axis} />
+        <YAxis type="category" dataKey="stage" {...axis} width={50} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
+          formatter={(v: number) => [`${v} bugs (${((v / max) * 100).toFixed(0)}%)`, "Caught"]}
+        />
+        <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+          {data.map((d) => (
+            <Cell key={d.stage} fill={COLORS[d.stage as Environment]} />
+          ))}
+        </Bar>
+      </BarChart>
+    </ChartCard>
+  );
+}
+
 export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
   const envs: Environment[] = ["DEV", "SIT", "UAT", "PROD"];
   const data = envs.map((e) => ({

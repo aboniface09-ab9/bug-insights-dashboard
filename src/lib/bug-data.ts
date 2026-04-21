@@ -46,9 +46,8 @@ export const parseCsv = (text: string): BugRow[] => {
         r["System"]?.trim() || ticketId.split("-")[0]?.toUpperCase() || "UNKNOWN";
       const sev = (r["Severity"]?.trim().toUpperCase() || "P3") as Severity;
       const env = (r["TJ Environment"]?.trim().toUpperCase() || "PROD") as Environment;
-      const month =
-        r["Month"]?.trim() ||
-        `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, "0")}`;
+      // Always derive YYYY-MM from Created date for reliable chronological sorting
+      const month = `${created.getFullYear()}-${String(created.getMonth() + 1).padStart(2, "0")}`;
       const mttrRaw = r["MTTR"]?.trim();
       let mttr: number | null = mttrRaw ? Number(mttrRaw) : null;
       if (mttr === null && resolved) {

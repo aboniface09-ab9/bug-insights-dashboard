@@ -35,6 +35,17 @@ const tooltipStyle = {
   border: "1px solid oklch(0.32 0.04 254)",
   borderRadius: 8,
   fontSize: 12,
+  color: "oklch(0.96 0.01 250)",
+};
+
+const tooltipLabelStyle = {
+  color: "oklch(0.96 0.01 250)",
+  fontWeight: 600,
+  marginBottom: 4,
+};
+
+const tooltipItemStyle = {
+  color: "oklch(0.9 0.02 250)",
 };
 
 interface ChartCardProps {

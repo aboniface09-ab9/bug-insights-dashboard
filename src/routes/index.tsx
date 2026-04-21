@@ -154,29 +154,40 @@ function Dashboard() {
           <div className="space-y-6">
             {/* Metrics */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-              <MetricCard label="Total Bugs" value={metrics.total.toLocaleString()} />
+              <MetricCard
+                label="Total Bugs"
+                value={metrics.total.toLocaleString()}
+                icon={Bug}
+                trend={monthlyTrend.total}
+              />
               <MetricCard
                 label="Prod Bugs"
                 value={metrics.prod.toLocaleString()}
                 tone="critical"
+                icon={AlertOctagon}
+                trend={monthlyTrend.prod}
               />
               <MetricCard
                 label="Leakage %"
                 value={`${metrics.leakagePct.toFixed(1)}%`}
                 sub="Prod ÷ Total"
                 tone={metrics.leakagePct > 50 ? "critical" : "warning"}
+                icon={TrendingDown}
+                trend={monthlyTrend.leakage}
               />
               <MetricCard
                 label="P1 Leakage %"
                 value={`${metrics.p1LeakagePct.toFixed(1)}%`}
                 sub="Critical bugs in PROD"
                 tone={metrics.p1LeakagePct > 30 ? "critical" : "warning"}
+                icon={Flame}
               />
               <MetricCard
                 label="Avg MTTR"
                 value={metrics.avgMttr !== null ? `${metrics.avgMttr.toFixed(1)}d` : "—"}
                 sub={`${metrics.resolvedCount} resolved`}
                 tone="success"
+                icon={Timer}
               />
             </div>
 
@@ -212,10 +223,13 @@ function Dashboard() {
 
             {/* Charts */}
             <div className="grid gap-4 lg:grid-cols-2">
-              <LeakageTrendChart rows={filtered} />
+              <div className="lg:col-span-2">
+                <LeakageTrendChart rows={filtered} />
+              </div>
               <SeverityChart rows={filtered} />
               <SystemChart rows={filtered} />
               <EnvironmentChart rows={filtered} />
+              <QaFunnelChart rows={filtered} />
             </div>
 
             {filtered.length === 0 && (

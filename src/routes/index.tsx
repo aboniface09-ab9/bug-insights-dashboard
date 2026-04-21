@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Activity, RefreshCw } from "lucide-react";
+import { Activity, RefreshCw, Bug, AlertOctagon, TrendingDown, Flame, Timer, CircleDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,6 +10,7 @@ import { FilterChips } from "@/components/dashboard/FilterChips";
 import {
   EnvironmentChart,
   LeakageTrendChart,
+  QaFunnelChart,
   SeverityChart,
   SystemChart,
 } from "@/components/dashboard/Charts";
@@ -68,38 +69,61 @@ function Dashboard() {
       <Toaster theme="dark" />
 
       {/* Header */}
-      <header className="border-b border-border/60 bg-card/40 backdrop-blur-sm">
+      <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--gradient-primary)] shadow-[var(--shadow-glow)]">
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--gradient-primary)] shadow-[var(--shadow-glow)]">
               <Activity className="h-5 w-5 text-primary-foreground" />
+              <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--success)]" />
+              </span>
             </div>
             <div>
-              <h1 className="font-display text-lg font-semibold leading-none">
+              <h1 className="font-display text-lg font-semibold leading-none tracking-tight">
                 Bug Quality Dashboard
               </h1>
-              <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
                 Defect leakage · QA effectiveness · Phase 1
               </p>
             </div>
           </div>
-          {rows.length > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="hidden font-mono text-xs text-muted-foreground sm:inline">
-                {filename}
-              </span>
-              <Button variant="outline" size="sm" onClick={reset}>
-                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                New file
-              </Button>
-            </div>
-          )}
+          <div className="flex items-center gap-3">
+            {rows.length > 0 && (
+              <>
+                <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 sm:flex">
+                  <CircleDot className="h-3 w-3 text-[var(--success)]" />
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {filtered.length.toLocaleString()} / {rows.length.toLocaleString()} bugs
+                  </span>
+                </div>
+                <span className="hidden font-mono text-xs text-muted-foreground md:inline">
+                  {filename}
+                </span>
+                <Button variant="outline" size="sm" onClick={reset}>
+                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                  New file
+                </Button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         {rows.length === 0 ? (
-          <div className="mx-auto max-w-2xl pt-12">
+          <div className="mx-auto max-w-2xl pt-16">
+            <div className="mb-8 text-center">
+              <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary">
+                ▸ Phase 1 · Live preview
+              </p>
+              <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight">
+                See what's <span className="bg-[var(--gradient-primary)] bg-clip-text text-transparent">leaking</span> to production.
+              </h2>
+              <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
+                Replace manual QA reports with a live, filterable dashboard built from your Jira exports.
+              </p>
+            </div>
             <CsvDropzone
               onLoaded={(r, f) => {
                 setRows(r);
@@ -107,7 +131,7 @@ function Dashboard() {
               }}
             />
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Required columns: <span className="font-mono">Ticket ID, Created, Resolved, Severity, TJ Environment</span>
+              Required columns: <span className="font-mono text-foreground/70">Ticket ID, Created, Resolved, Severity, TJ Environment</span>
             </p>
           </div>
         ) : (

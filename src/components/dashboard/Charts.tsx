@@ -93,8 +93,7 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" {...axis} />
         <YAxis {...axis} unit="%" />
-        <Tooltip contentStyle={tooltipStyle} />
-        <ReferenceLine
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} />
           y={15}
           stroke="oklch(0.72 0.17 155)"
           strokeDasharray="6 4"
@@ -162,8 +161,7 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="system" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
-        <Bar dataKey="count" fill="oklch(0.78 0.16 195)" radius={[6, 6, 0, 0]} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
       </BarChart>
     </ChartCard>
   );
@@ -185,6 +183,8 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
         <YAxis type="category" dataKey="stage" {...axis} width={50} />
         <Tooltip
           contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
           cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
           formatter={(v) => [`${v} bugs (${((Number(v) / max) * 100).toFixed(0)}%)`, "Caught"]}
         />
@@ -211,8 +211,7 @@ export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="env" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
-        <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
           {data.map((d) => (
             <Cell key={d.env} fill={COLORS[d.env as Environment]} />
           ))}

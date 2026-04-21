@@ -8,6 +8,7 @@ import {
   LineChart,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -76,12 +77,25 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
     }));
 
   return (
-    <ChartCard title="Leakage Trend" subtitle="% of bugs reaching PROD per month">
+    <ChartCard title="Leakage Trend" subtitle="% of bugs reaching PROD per month · target 15%">
       <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" {...axis} />
         <YAxis {...axis} unit="%" />
         <Tooltip contentStyle={tooltipStyle} />
+        <ReferenceLine
+          y={15}
+          stroke="oklch(0.72 0.17 155)"
+          strokeDasharray="6 4"
+          strokeWidth={1.5}
+          label={{
+            value: "Target 15%",
+            position: "insideTopRight",
+            fill: "oklch(0.72 0.17 155)",
+            fontSize: 11,
+            fontFamily: "JetBrains Mono, monospace",
+          }}
+        />
         <Line
           type="monotone"
           dataKey="leakage"

@@ -161,7 +161,7 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
         <Tooltip
           contentStyle={tooltipStyle}
           cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
-          formatter={(v: number) => [`${v} bugs (${((v / max) * 100).toFixed(0)}%)`, "Caught"]}
+          formatter={(v) => [`${v} bugs (${((Number(v) / max) * 100).toFixed(0)}%)`, "Caught"]}
         />
         <Bar dataKey="count" radius={[0, 6, 6, 0]}>
           {data.map((d) => (

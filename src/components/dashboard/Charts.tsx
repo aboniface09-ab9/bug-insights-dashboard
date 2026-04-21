@@ -163,6 +163,7 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
         <XAxis dataKey="system" {...axis} />
         <YAxis {...axis} />
         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Bar dataKey="count" fill="oklch(0.78 0.16 195)" radius={[6, 6, 0, 0]} />
       </BarChart>
     </ChartCard>
   );

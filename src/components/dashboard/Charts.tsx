@@ -88,7 +88,7 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
     <ChartCard title="Leakage Trend" subtitle="% of bugs reaching PROD per month · target 15%">
       <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="month" {...axis} />
+        <XAxis dataKey="label" {...axis} />
         <YAxis {...axis} unit="%" />
         <Tooltip contentStyle={tooltipStyle} />
         <ReferenceLine

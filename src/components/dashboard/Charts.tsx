@@ -35,6 +35,17 @@ const tooltipStyle = {
   border: "1px solid oklch(0.32 0.04 254)",
   borderRadius: 8,
   fontSize: 12,
+  color: "oklch(0.96 0.01 250)",
+};
+
+const tooltipLabelStyle = {
+  color: "oklch(0.96 0.01 250)",
+  fontWeight: 600,
+  marginBottom: 4,
+};
+
+const tooltipItemStyle = {
+  color: "oklch(0.9 0.02 250)",
 };
 
 interface ChartCardProps {
@@ -82,7 +93,7 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" {...axis} />
         <YAxis {...axis} unit="%" />
-        <Tooltip contentStyle={tooltipStyle} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} />
         <ReferenceLine
           y={15}
           stroke="oklch(0.72 0.17 155)"
@@ -151,7 +162,7 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="system" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
         <Bar dataKey="count" fill="oklch(0.78 0.16 195)" radius={[6, 6, 0, 0]} />
       </BarChart>
     </ChartCard>
@@ -174,6 +185,8 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
         <YAxis type="category" dataKey="stage" {...axis} width={50} />
         <Tooltip
           contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
           cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
           formatter={(v) => [`${v} bugs (${((Number(v) / max) * 100).toFixed(0)}%)`, "Caught"]}
         />
@@ -200,7 +213,7 @@ export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="env" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
         <Bar dataKey="count" radius={[6, 6, 0, 0]}>
           {data.map((d) => (
             <Cell key={d.env} fill={COLORS[d.env as Environment]} />

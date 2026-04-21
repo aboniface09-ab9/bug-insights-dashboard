@@ -58,6 +58,22 @@ function Dashboard() {
   const filtered = useMemo(() => applyFilters(rows, filters), [rows, filters]);
   const metrics = useMemo(() => computeMetrics(filtered), [filtered]);
 
+  const monthlyTrend = useMemo(() => {
+    const byMonth = new Map<string, { t: number; p: number }>();
+    filtered.forEach((r) => {
+      const m = byMonth.get(r.month) ?? { t: 0, p: 0 };
+      m.t += 1;
+      if (r.environment === "PROD") m.p += 1;
+      byMonth.set(r.month, m);
+    });
+    const sorted = Array.from(byMonth.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return {
+      total: sorted.map(([, v]) => v.t),
+      prod: sorted.map(([, v]) => v.p),
+      leakage: sorted.map(([, v]) => (v.t ? (v.p / v.t) * 100 : 0)),
+    };
+  }, [filtered]);
+
   const reset = () => {
     setRows([]);
     setFilename("");

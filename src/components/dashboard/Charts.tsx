@@ -94,6 +94,7 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
         <XAxis dataKey="month" {...axis} />
         <YAxis {...axis} unit="%" />
         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} />
+        <ReferenceLine
           y={15}
           stroke="oklch(0.72 0.17 155)"
           strokeDasharray="6 4"

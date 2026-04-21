@@ -69,18 +69,26 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
   });
   const data = Array.from(byMonth.values())
     .sort((a, b) => a.month.localeCompare(b.month))
-    .map((d) => ({
-      month: d.month,
-      leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
-      prod: d.prod,
-      total: d.total,
-    }));
+    .map((d) => {
+      const [y, m] = d.month.split("-").map(Number);
+      const label = new Date(y, (m ?? 1) - 1, 1).toLocaleDateString("en-US", {
+        month: "short",
+        year: "2-digit",
+      });
+      return {
+        month: d.month,
+        label,
+        leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
+        prod: d.prod,
+        total: d.total,
+      };
+    });
 
   return (
     <ChartCard title="Leakage Trend" subtitle="% of bugs reaching PROD per month · target 15%">
       <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="month" {...axis} />
+        <XAxis dataKey="label" {...axis} />
         <YAxis {...axis} unit="%" />
         <Tooltip contentStyle={tooltipStyle} />
         <ReferenceLine

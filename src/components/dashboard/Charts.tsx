@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -15,6 +16,7 @@ import {
   YAxis,
 } from "recharts";
 import { Card } from "@/components/ui/card";
+import { TicketListDialog } from "./TicketListDialog";
 import type { BugRow, Severity, Environment } from "@/lib/bug-data";
 
 const COLORS = {
@@ -59,7 +61,11 @@ function ChartCard({ title, subtitle, children }: ChartCardProps) {
     <Card className="border-border/60 bg-[var(--gradient-surface)] p-5 shadow-[var(--shadow-card)]">
       <div className="mb-4">
         <h3 className="font-display text-base font-semibold">{title}</h3>
-        {subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>}
+        {subtitle && (
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {subtitle} <span className="text-primary/70">· click bars to view tickets</span>
+          </p>
+        )}
       </div>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
@@ -70,26 +76,62 @@ function ChartCard({ title, subtitle, children }: ChartCardProps) {
   );
 }
 
+// Hook for managing a drill-down dialog tied to a specific chart.
+function useDrillDown(rows: BugRow[]) {
+  const [state, setState] = useState<{
+    open: boolean;
+    title: string;
+    subtitle?: string;
+    filtered: BugRow[];
+  }>({ open: false, title: "", filtered: [] });
+
+  const openFor = (title: string, subtitle: string, predicate: (r: BugRow) => boolean) => {
+    setState({ open: true, title, subtitle, filtered: rows.filter(predicate) });
+  };
+
+  const dialog = (
+    <TicketListDialog
+      open={state.open}
+      onOpenChange={(o) => setState((s) => ({ ...s, open: o }))}
+      title={state.title}
+      subtitle={state.subtitle}
+      rows={state.filtered}
+    />
+  );
+
+  return { openFor, dialog };
+}
+
 export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
-  const byMonth = new Map<string, { month: string; total: number; prod: number }>();
-  rows.forEach((r) => {
-    const m = byMonth.get(r.month) ?? { month: r.month, total: 0, prod: 0 };
-    m.total += 1;
-    if (r.environment === "PROD") m.prod += 1;
-    byMonth.set(r.month, m);
-  });
-  const data = Array.from(byMonth.values())
-    .sort((a, b) => a.month.localeCompare(b.month))
-    .map((d) => ({
-      month: d.month,
-      leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
-      prod: d.prod,
-      total: d.total,
-    }));
+  const { openFor, dialog } = useDrillDown(rows);
+  const data = useMemo(() => {
+    const byMonth = new Map<string, { month: string; total: number; prod: number }>();
+    rows.forEach((r) => {
+      const m = byMonth.get(r.month) ?? { month: r.month, total: 0, prod: 0 };
+      m.total += 1;
+      if (r.environment === "PROD") m.prod += 1;
+      byMonth.set(r.month, m);
+    });
+    return Array.from(byMonth.values())
+      .sort((a, b) => a.month.localeCompare(b.month))
+      .map((d) => ({
+        month: d.month,
+        leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
+        prod: d.prod,
+        total: d.total,
+      }));
+  }, [rows]);
 
   return (
     <ChartCard title="Leakage Trend" subtitle="% of bugs reaching PROD per month · target 15%">
-      <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+      <LineChart
+        data={data}
+        margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
+        onClick={(e) => {
+          const month = (e?.activePayload?.[0]?.payload as { month?: string } | undefined)?.month;
+          if (month) openFor(`Leakage · ${month}`, `All bugs created in ${month}`, (r) => r.month === month);
+        }}
+      >
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="month" {...axis} />
         <YAxis {...axis} unit="%" />
@@ -112,15 +154,17 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
           dataKey="leakage"
           stroke="oklch(0.72 0.18 235)"
           strokeWidth={2.5}
-          dot={{ fill: "oklch(0.72 0.18 235)", r: 4 }}
-          activeDot={{ r: 6 }}
+          dot={{ fill: "oklch(0.72 0.18 235)", r: 4, cursor: "pointer" }}
+          activeDot={{ r: 6, cursor: "pointer" }}
         />
       </LineChart>
+      {dialog}
     </ChartCard>
   );
 }
 
 export function SeverityChart({ rows }: { rows: BugRow[] }) {
+  const { openFor, dialog } = useDrillDown(rows);
   const counts: Record<Severity, number> = { P1: 0, P2: 0, P3: 0 };
   rows.forEach((r) => {
     counts[r.severity] = (counts[r.severity] ?? 0) + 1;
@@ -137,6 +181,11 @@ export function SeverityChart({ rows }: { rows: BugRow[] }) {
           innerRadius={50}
           outerRadius={90}
           paddingAngle={2}
+          onClick={(d) => {
+            const sev = (d as { name?: Severity })?.name;
+            if (sev) openFor(`Severity · ${sev}`, `All ${sev} bugs`, (r) => r.severity === sev);
+          }}
+          cursor="pointer"
         >
           {data.map((d) => (
             <Cell key={d.name} fill={COLORS[d.name as Severity]} />
@@ -145,11 +194,13 @@ export function SeverityChart({ rows }: { rows: BugRow[] }) {
         <Tooltip contentStyle={tooltipStyle} />
         <Legend wrapperStyle={{ fontSize: 12 }} />
       </PieChart>
+      {dialog}
     </ChartCard>
   );
 }
 
 export function SystemChart({ rows }: { rows: BugRow[] }) {
+  const { openFor, dialog } = useDrillDown(rows);
   const counts = new Map<string, number>();
   rows.forEach((r) => counts.set(r.system, (counts.get(r.system) ?? 0) + 1));
   const data = Array.from(counts.entries())
@@ -163,13 +214,24 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
         <XAxis dataKey="system" {...axis} />
         <YAxis {...axis} />
         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
-        <Bar dataKey="count" fill="oklch(0.78 0.16 195)" radius={[6, 6, 0, 0]} />
+        <Bar
+          dataKey="count"
+          fill="oklch(0.78 0.16 195)"
+          radius={[6, 6, 0, 0]}
+          cursor="pointer"
+          onClick={(d) => {
+            const sys = (d as { system?: string })?.system;
+            if (sys) openFor(`System · ${sys}`, `All bugs in ${sys}`, (r) => r.system === sys);
+          }}
+        />
       </BarChart>
+      {dialog}
     </ChartCard>
   );
 }
 
 export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
+  const { openFor, dialog } = useDrillDown(rows);
   const stages: Environment[] = ["DEV", "SIT", "UAT", "PROD"];
   const data = stages.map((s) => ({
     stage: s,
@@ -190,17 +252,27 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
           cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
           formatter={(v) => [`${v} bugs (${((Number(v) / total) * 100).toFixed(0)}% of total)`, "Caught"]}
         />
-        <Bar dataKey="count" radius={[0, 6, 6, 0]}>
+        <Bar
+          dataKey="count"
+          radius={[0, 6, 6, 0]}
+          cursor="pointer"
+          onClick={(d) => {
+            const env = (d as { stage?: Environment })?.stage;
+            if (env) openFor(`Caught in ${env}`, `Bugs whose environment is ${env}`, (r) => r.environment === env);
+          }}
+        >
           {data.map((d) => (
             <Cell key={d.stage} fill={COLORS[d.stage as Environment]} />
           ))}
         </Bar>
       </BarChart>
+      {dialog}
     </ChartCard>
   );
 }
 
 export function ReporterChart({ rows }: { rows: BugRow[] }) {
+  const { openFor, dialog } = useDrillDown(rows);
   const counts = new Map<string, number>();
   rows.forEach((r) => counts.set(r.reporter, (counts.get(r.reporter) ?? 0) + 1));
   const data = Array.from(counts.entries())
@@ -215,13 +287,24 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
         <XAxis type="number" {...axis} />
         <YAxis type="category" dataKey="reporter" {...axis} width={120} tick={{ fontSize: 10 }} />
         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
-        <Bar dataKey="count" fill="oklch(0.72 0.18 235)" radius={[0, 6, 6, 0]} />
+        <Bar
+          dataKey="count"
+          fill="oklch(0.72 0.18 235)"
+          radius={[0, 6, 6, 0]}
+          cursor="pointer"
+          onClick={(d) => {
+            const rep = (d as { reporter?: string })?.reporter;
+            if (rep) openFor(`Reporter · ${rep}`, `Bugs logged by ${rep}`, (r) => r.reporter === rep);
+          }}
+        />
       </BarChart>
+      {dialog}
     </ChartCard>
   );
 }
 
 export function ComponentChart({ rows }: { rows: BugRow[] }) {
+  const { openFor, dialog } = useDrillDown(rows);
   const counts = new Map<string, number>();
   rows.forEach((r) => counts.set(r.component, (counts.get(r.component) ?? 0) + 1));
   const data = Array.from(counts.entries())
@@ -236,13 +319,24 @@ export function ComponentChart({ rows }: { rows: BugRow[] }) {
         <XAxis type="number" {...axis} />
         <YAxis type="category" dataKey="component" {...axis} width={140} tick={{ fontSize: 10 }} />
         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
-        <Bar dataKey="count" fill="oklch(0.78 0.16 195)" radius={[0, 6, 6, 0]} />
+        <Bar
+          dataKey="count"
+          fill="oklch(0.78 0.16 195)"
+          radius={[0, 6, 6, 0]}
+          cursor="pointer"
+          onClick={(d) => {
+            const c = (d as { component?: string })?.component;
+            if (c) openFor(`Component · ${c}`, `Bugs in ${c}`, (r) => r.component === c);
+          }}
+        />
       </BarChart>
+      {dialog}
     </ChartCard>
   );
 }
 
 export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
+  const { openFor, dialog } = useDrillDown(rows);
   const buckets = new Map<string, number[]>();
   rows.forEach((r) => {
     if (r.mttr === null) return;
@@ -275,13 +369,24 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
             return [`${v}d (${payload?.n ?? 0} resolved)`, "Avg MTTR"];
           }}
         />
-        <Bar dataKey="mttr" fill="oklch(0.78 0.17 70)" radius={[0, 6, 6, 0]} />
+        <Bar
+          dataKey="mttr"
+          fill="oklch(0.78 0.17 70)"
+          radius={[0, 6, 6, 0]}
+          cursor="pointer"
+          onClick={(d) => {
+            const c = (d as { component?: string })?.component;
+            if (c) openFor(`MTTR · ${c}`, `Resolved bugs in ${c}`, (r) => r.component === c && r.mttr !== null);
+          }}
+        />
       </BarChart>
+      {dialog}
     </ChartCard>
   );
 }
 
 export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
+  const { openFor, dialog } = useDrillDown(rows);
   const envs: Environment[] = ["DEV", "SIT", "UAT", "PROD"];
   const data = envs.map((e) => ({
     env: e,
@@ -295,12 +400,21 @@ export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
         <XAxis dataKey="env" {...axis} />
         <YAxis {...axis} />
         <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
-        <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+        <Bar
+          dataKey="count"
+          radius={[6, 6, 0, 0]}
+          cursor="pointer"
+          onClick={(d) => {
+            const env = (d as { env?: Environment })?.env;
+            if (env) openFor(`Environment · ${env}`, `Bugs in ${env}`, (r) => r.environment === env);
+          }}
+        >
           {data.map((d) => (
             <Cell key={d.env} fill={COLORS[d.env as Environment]} />
           ))}
         </Bar>
       </BarChart>
+      {dialog}
     </ChartCard>
   );
 }

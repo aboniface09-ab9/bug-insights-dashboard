@@ -1,5 +1,7 @@
 {
   "routes": [
+    { "src": "^/assets/(.*)", "dest": "/dist/client/assets/$1" },
+    { "src": "^/(.*\\.(js|css|png|jpg|jpeg|svg|ico))$", "dest": "/dist/client/$1" },
     { "src": "/(.*)", "dest": "/api" }
   ]
 }

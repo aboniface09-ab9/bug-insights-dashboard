@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Activity, RefreshCw, Bug, AlertOctagon, TrendingDown, Flame, Timer, CircleDot } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { RefreshCw, Bug, AlertOctagon, TrendingDown, Flame, Timer, CircleDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
+import { AppHeader } from "@/components/dashboard/AppHeader";
 import { CsvDropzone } from "@/components/dashboard/CsvDropzone";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { FilterChips } from "@/components/dashboard/FilterChips";
@@ -57,7 +58,6 @@ function Dashboard() {
   const options = useMemo(() => {
     const systems = Array.from(new Set(rows.map((r) => r.system))).sort();
     const months = Array.from(new Set(rows.map((r) => r.month))).sort();
-    // Show top 15 reporters/components in the filter bar to keep it usable
     const tally = (key: "reporter" | "component") => {
       const m = new Map<string, number>();
       rows.forEach((r) => m.set(r[key], (m.get(r[key]) ?? 0) + 1));
@@ -71,6 +71,23 @@ function Dashboard() {
 
   const filtered = useMemo(() => applyFilters(rows, filters), [rows, filters]);
   const metrics = useMemo(() => computeMetrics(filtered), [filtered]);
+
+  // Persist live leakage so the Executive Summary page can pick it up.
+  useEffect(() => {
+    if (rows.length === 0) return;
+    try {
+      localStorage.setItem(
+        "bqd:liveMetrics",
+        JSON.stringify({
+          leakagePct: metrics.leakagePct,
+          total: metrics.total,
+          updatedAt: Date.now(),
+        }),
+      );
+    } catch {
+      // ignore storage errors
+    }
+  }, [metrics, rows.length]);
 
   const monthlyTrend = useMemo(() => {
     const byMonth = new Map<string, { t: number; p: number }>();
@@ -94,51 +111,27 @@ function Dashboard() {
     setFilters(EMPTY_FILTERS);
   };
 
+  const headerRight =
+    rows.length > 0 ? (
+      <>
+        <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 sm:flex">
+          <CircleDot className="h-3 w-3 text-[var(--success)]" />
+          <span className="font-mono text-[11px] text-muted-foreground">
+            {filtered.length.toLocaleString()} / {rows.length.toLocaleString()} bugs
+          </span>
+        </div>
+        <span className="hidden font-mono text-xs text-muted-foreground md:inline">{filename}</span>
+        <Button variant="outline" size="sm" onClick={reset}>
+          <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+          New file
+        </Button>
+      </>
+    ) : null;
+
   return (
     <div className="min-h-screen bg-background">
       <Toaster theme="dark" />
-
-      {/* Header */}
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--gradient-primary)] shadow-[var(--shadow-glow)]">
-              <Activity className="h-5 w-5 text-primary-foreground" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--success)]" />
-              </span>
-            </div>
-            <div>
-              <h1 className="font-display text-lg font-semibold leading-none tracking-tight">
-                Bug Quality Dashboard
-              </h1>
-              <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-                Defect leakage · QA effectiveness · Phase 1
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {rows.length > 0 && (
-              <>
-                <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 sm:flex">
-                  <CircleDot className="h-3 w-3 text-[var(--success)]" />
-                  <span className="font-mono text-[11px] text-muted-foreground">
-                    {filtered.length.toLocaleString()} / {rows.length.toLocaleString()} bugs
-                  </span>
-                </div>
-                <span className="hidden font-mono text-xs text-muted-foreground md:inline">
-                  {filename}
-                </span>
-                <Button variant="outline" size="sm" onClick={reset}>
-                  <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                  New file
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <AppHeader rightSlot={headerRight} badge="Defect leakage · QA effectiveness · Phase 1" />
 
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         {rows.length === 0 ? (
@@ -166,21 +159,9 @@ function Dashboard() {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Metrics */}
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-              <MetricCard
-                label="Total Bugs"
-                value={metrics.total.toLocaleString()}
-                icon={Bug}
-                trend={monthlyTrend.total}
-              />
-              <MetricCard
-                label="Prod Bugs"
-                value={metrics.prod.toLocaleString()}
-                tone="critical"
-                icon={AlertOctagon}
-                trend={monthlyTrend.prod}
-              />
+              <MetricCard label="Total Bugs" value={metrics.total.toLocaleString()} icon={Bug} trend={monthlyTrend.total} />
+              <MetricCard label="Prod Bugs" value={metrics.prod.toLocaleString()} tone="critical" icon={AlertOctagon} trend={monthlyTrend.prod} />
               <MetricCard
                 label="Leakage %"
                 value={`${metrics.leakagePct.toFixed(1)}%`}
@@ -205,7 +186,6 @@ function Dashboard() {
               />
             </div>
 
-            {/* Filters */}
             <Card className="border-border/60 bg-[var(--gradient-surface)] p-5 shadow-[var(--shadow-card)]">
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 <FilterChips
@@ -213,41 +193,52 @@ function Dashboard() {
                   options={options.systems}
                   selected={filters.systems}
                   onChange={(s) => setFilters({ ...filters, systems: s })}
+                  rows={rows}
+                  accessor={(r) => r.system}
                 />
                 <FilterChips<Severity>
                   label="Severity"
                   options={["P1", "P2", "P3"]}
                   selected={filters.severities}
                   onChange={(s) => setFilters({ ...filters, severities: s })}
+                  rows={rows}
+                  accessor={(r) => r.severity}
                 />
                 <FilterChips
                   label="Month"
                   options={options.months}
                   selected={filters.months}
                   onChange={(s) => setFilters({ ...filters, months: s })}
+                  rows={rows}
+                  accessor={(r) => r.month}
                 />
                 <FilterChips<Environment>
                   label="Environment"
                   options={["DEV", "SIT", "UAT", "PROD"]}
                   selected={filters.environments}
                   onChange={(s) => setFilters({ ...filters, environments: s })}
+                  rows={rows}
+                  accessor={(r) => r.environment}
                 />
                 <FilterChips
                   label="Reporter (top 15)"
                   options={options.reporters}
                   selected={filters.reporters}
                   onChange={(s) => setFilters({ ...filters, reporters: s })}
+                  rows={rows}
+                  accessor={(r) => r.reporter}
                 />
                 <FilterChips
                   label="Component (top 15)"
                   options={options.components}
                   selected={filters.components}
                   onChange={(s) => setFilters({ ...filters, components: s })}
+                  rows={rows}
+                  accessor={(r) => r.component}
                 />
               </div>
             </Card>
 
-            {/* Charts */}
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="lg:col-span-2">
                 <LeakageTrendChart rows={filtered} />
@@ -265,9 +256,7 @@ function Dashboard() {
 
             {filtered.length === 0 && (
               <Card className="border-border/60 bg-card/40 p-8 text-center">
-                <p className="text-sm text-muted-foreground">
-                  No bugs match the current filters.
-                </p>
+                <p className="text-sm text-muted-foreground">No bugs match the current filters.</p>
               </Card>
             )}
           </div>

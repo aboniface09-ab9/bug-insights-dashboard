@@ -8,9 +8,12 @@ import { CsvDropzone } from "@/components/dashboard/CsvDropzone";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { FilterChips } from "@/components/dashboard/FilterChips";
 import {
+  ComponentChart,
   EnvironmentChart,
   LeakageTrendChart,
+  MttrByComponentChart,
   QaFunnelChart,
+  ReporterChart,
   SeverityChart,
   SystemChart,
 } from "@/components/dashboard/Charts";
@@ -42,6 +45,8 @@ const EMPTY_FILTERS: Filters = {
   severities: [],
   months: [],
   environments: [],
+  reporters: [],
+  components: [],
 };
 
 function Dashboard() {
@@ -52,7 +57,16 @@ function Dashboard() {
   const options = useMemo(() => {
     const systems = Array.from(new Set(rows.map((r) => r.system))).sort();
     const months = Array.from(new Set(rows.map((r) => r.month))).sort();
-    return { systems, months };
+    // Show top 15 reporters/components in the filter bar to keep it usable
+    const tally = (key: "reporter" | "component") => {
+      const m = new Map<string, number>();
+      rows.forEach((r) => m.set(r[key], (m.get(r[key]) ?? 0) + 1));
+      return Array.from(m.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(([v]) => v);
+    };
+    return { systems, months, reporters: tally("reporter"), components: tally("component") };
   }, [rows]);
 
   const filtered = useMemo(() => applyFilters(rows, filters), [rows, filters]);
@@ -193,7 +207,7 @@ function Dashboard() {
 
             {/* Filters */}
             <Card className="border-border/60 bg-[var(--gradient-surface)] p-5 shadow-[var(--shadow-card)]">
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 <FilterChips
                   label="System"
                   options={options.systems}
@@ -218,6 +232,18 @@ function Dashboard() {
                   selected={filters.environments}
                   onChange={(s) => setFilters({ ...filters, environments: s })}
                 />
+                <FilterChips
+                  label="Reporter (top 15)"
+                  options={options.reporters}
+                  selected={filters.reporters}
+                  onChange={(s) => setFilters({ ...filters, reporters: s })}
+                />
+                <FilterChips
+                  label="Component (top 15)"
+                  options={options.components}
+                  selected={filters.components}
+                  onChange={(s) => setFilters({ ...filters, components: s })}
+                />
               </div>
             </Card>
 
@@ -230,6 +256,11 @@ function Dashboard() {
               <SystemChart rows={filtered} />
               <EnvironmentChart rows={filtered} />
               <QaFunnelChart rows={filtered} />
+              <ComponentChart rows={filtered} />
+              <ReporterChart rows={filtered} />
+              <div className="lg:col-span-2">
+                <MttrByComponentChart rows={filtered} />
+              </div>
             </div>
 
             {filtered.length === 0 && (

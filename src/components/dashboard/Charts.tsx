@@ -128,7 +128,9 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
         data={data}
         margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
         onClick={(e) => {
-          const month = (e?.activePayload?.[0]?.payload as { month?: string } | undefined)?.month;
+          const payload = (e as { activePayload?: Array<{ payload?: { month?: string } }> } | undefined)
+            ?.activePayload?.[0]?.payload;
+          const month = payload?.month;
           if (month) openFor(`Leakage · ${month}`, `All bugs created in ${month}`, (r) => r.month === month);
         }}
       >

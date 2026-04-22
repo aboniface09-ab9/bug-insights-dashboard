@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { TrendingDown, Clock, AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -83,6 +84,32 @@ const metrics: ExecMetric[] = [
 ];
 
 function ExecutiveSummary() {
+  const [liveLeakage, setLiveLeakage] = useState<{ leakagePct: number; total: number } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("bqd:liveMetrics");
+      if (raw) {
+        const parsed = JSON.parse(raw) as { leakagePct: number; total: number };
+        if (typeof parsed.leakagePct === "number") setLiveLeakage(parsed);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const resolved: ExecMetric[] = metrics.map((m) => {
+    if (m.label === "Leakage Rate" && liveLeakage) {
+      return {
+        ...m,
+        value: liveLeakage.leakagePct.toFixed(1),
+        trend: `Live · ${liveLeakage.total.toLocaleString()} bugs analysed`,
+        trendIsGood: liveLeakage.leakagePct <= 15,
+      };
+    }
+    return m;
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader badge="For executive review · key engineering metrics" />
@@ -103,7 +130,7 @@ function ExecutiveSummary() {
         </div>
 
         <div className="grid gap-5 md:grid-cols-2">
-          {metrics.map((m) => (
+          {resolved.map((m) => (
             <Card
               key={m.label}
               className="relative overflow-hidden border-border/60 bg-[var(--gradient-surface)] p-6 shadow-[var(--shadow-card)]"

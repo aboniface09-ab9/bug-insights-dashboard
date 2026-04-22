@@ -200,6 +200,87 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
   );
 }
 
+export function ReporterChart({ rows }: { rows: BugRow[] }) {
+  const counts = new Map<string, number>();
+  rows.forEach((r) => counts.set(r.reporter, (counts.get(r.reporter) ?? 0) + 1));
+  const data = Array.from(counts.entries())
+    .map(([reporter, count]) => ({ reporter, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  return (
+    <ChartCard title="Top Bug Reporters" subtitle="Who logs the most defects (top 10)">
+      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+        <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" {...axis} />
+        <YAxis type="category" dataKey="reporter" {...axis} width={120} tick={{ fontSize: 10 }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Bar dataKey="count" fill="oklch(0.72 0.18 235)" radius={[0, 6, 6, 0]} />
+      </BarChart>
+    </ChartCard>
+  );
+}
+
+export function ComponentChart({ rows }: { rows: BugRow[] }) {
+  const counts = new Map<string, number>();
+  rows.forEach((r) => counts.set(r.component, (counts.get(r.component) ?? 0) + 1));
+  const data = Array.from(counts.entries())
+    .map(([component, count]) => ({ component, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 12);
+
+  return (
+    <ChartCard title="Bugs by Component" subtitle="Components with the most defects (top 12)">
+      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+        <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" {...axis} />
+        <YAxis type="category" dataKey="component" {...axis} width={140} tick={{ fontSize: 10 }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Bar dataKey="count" fill="oklch(0.78 0.16 195)" radius={[0, 6, 6, 0]} />
+      </BarChart>
+    </ChartCard>
+  );
+}
+
+export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
+  const buckets = new Map<string, number[]>();
+  rows.forEach((r) => {
+    if (r.mttr === null) return;
+    const arr = buckets.get(r.component) ?? [];
+    arr.push(r.mttr);
+    buckets.set(r.component, arr);
+  });
+  const data = Array.from(buckets.entries())
+    .map(([component, vals]) => ({
+      component,
+      mttr: Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10,
+      n: vals.length,
+    }))
+    .sort((a, b) => b.mttr - a.mttr)
+    .slice(0, 12);
+
+  return (
+    <ChartCard title="Mean Time to Resolve by Component" subtitle="Average days to resolve · top 12 slowest">
+      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+        <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" {...axis} unit="d" />
+        <YAxis type="category" dataKey="component" {...axis} width={140} tick={{ fontSize: 10 }} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
+          cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
+          formatter={(v, _n, p) => {
+            const payload = (p as { payload?: { n?: number } } | undefined)?.payload;
+            return [`${v}d (${payload?.n ?? 0} resolved)`, "Avg MTTR"];
+          }}
+        />
+        <Bar dataKey="mttr" fill="oklch(0.78 0.17 70)" radius={[0, 6, 6, 0]} />
+      </BarChart>
+    </ChartCard>
+  );
+}
+
 export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
   const envs: Environment[] = ["DEV", "SIT", "UAT", "PROD"];
   const data = envs.map((e) => ({

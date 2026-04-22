@@ -270,7 +270,10 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
           labelStyle={tooltipLabelStyle}
           itemStyle={tooltipItemStyle}
           cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
-          formatter={(v: number, _n, p) => [`${v}d (${p.payload.n} resolved)`, "Avg MTTR"]}
+          formatter={(v, _n, p) => {
+            const payload = (p as { payload?: { n?: number } } | undefined)?.payload;
+            return [`${v}d (${payload?.n ?? 0} resolved)`, "Avg MTTR"];
+          }}
         />
         <Bar dataKey="mttr" fill="oklch(0.78 0.17 70)" radius={[0, 6, 6, 0]} />
       </BarChart>

@@ -175,10 +175,10 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
     stage: s,
     count: rows.filter((r) => r.environment === s).length,
   }));
-  const max = Math.max(...data.map((d) => d.count), 1);
+  const total = data.reduce((sum, d) => sum + d.count, 0) || 1;
 
   return (
-    <ChartCard title="QA Funnel" subtitle="Defect catch rate across environments">
+    <ChartCard title="QA Funnel" subtitle="Where defects are caught across environments">
       <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 0 }}>
         <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" {...axis} />
@@ -188,7 +188,7 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
           labelStyle={tooltipLabelStyle}
           itemStyle={tooltipItemStyle}
           cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
-          formatter={(v) => [`${v} bugs (${((Number(v) / max) * 100).toFixed(0)}%)`, "Caught"]}
+          formatter={(v) => [`${v} bugs (${((Number(v) / total) * 100).toFixed(0)}% of total)`, "Caught"]}
         />
         <Bar dataKey="count" radius={[0, 6, 6, 0]}>
           {data.map((d) => (

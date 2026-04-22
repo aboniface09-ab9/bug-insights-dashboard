@@ -1,6 +1,8 @@
 {
   "routes": [
-    { "src": "^/assets/(.*)", "dest": "/dist/client/assets/$1" },
+    { "src": "^/(index-.*\\.js)$", "dest": "/dist/client/assets/$1" },
+    { "src": "^/(AppHeader-.*\\.js)$", "dest": "/dist/client/assets/$1" },
+    { "src": "^/(styles-.*\\.css)$", "dest": "/dist/client/assets/$1" },
     { "src": "/(.*)", "dest": "/api" }
   ]
 }

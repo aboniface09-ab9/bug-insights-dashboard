@@ -33,8 +33,8 @@ const tooltipLabelStyle = {
 };
 const tooltipItemStyle = { color: "oklch(0.9 0.02 250)" };
 
-const COLOR_BAR_OK = "oklch(0.72 0.18 235)"; // primary blue
-const COLOR_BAR_OVER = "oklch(0.65 0.24 25)"; // critical red
+const COLOR_BAR_OK = "oklch(0.72 0.18 235)"; // primary blue — at or below target
+const COLOR_BAR_OVER = "oklch(0.72 0.11 50)"; // soft ochre — above target
 const COLOR_LINE = "oklch(0.78 0.16 195)"; // accent cyan
 const COLOR_TARGET = "oklch(0.72 0.17 155)"; // success green
 

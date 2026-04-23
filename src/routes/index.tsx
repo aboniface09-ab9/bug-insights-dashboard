@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { RefreshCw, Bug, AlertOctagon, TrendingDown, Flame, Timer, CircleDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,11 +21,11 @@ import {
 import {
   applyFilters,
   computeMetrics,
-  type BugRow,
   type Environment,
   type Filters,
   type Severity,
 } from "@/lib/bug-data";
+import { useBugStore } from "@/lib/bug-store";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -51,8 +51,9 @@ const EMPTY_FILTERS: Filters = {
 };
 
 function Dashboard() {
-  const [rows, setRows] = useState<BugRow[]>([]);
-  const [filename, setFilename] = useState<string>("");
+  // Rows + filename now live in a root-level store so they survive route
+  // changes (Dashboard <-> Executive) and full page reloads (via IndexedDB).
+  const { rows, filename, hydrated, setData, reset: resetStore } = useBugStore();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
 
   const options = useMemo(() => {
@@ -72,23 +73,6 @@ function Dashboard() {
   const filtered = useMemo(() => applyFilters(rows, filters), [rows, filters]);
   const metrics = useMemo(() => computeMetrics(filtered), [filtered]);
 
-  // Persist live leakage so the Executive Summary page can pick it up.
-  useEffect(() => {
-    if (rows.length === 0) return;
-    try {
-      localStorage.setItem(
-        "bqd:liveMetrics",
-        JSON.stringify({
-          leakagePct: metrics.leakagePct,
-          total: metrics.total,
-          updatedAt: Date.now(),
-        }),
-      );
-    } catch {
-      // ignore storage errors
-    }
-  }, [metrics, rows.length]);
-
   const monthlyTrend = useMemo(() => {
     const byMonth = new Map<string, { t: number; p: number }>();
     filtered.forEach((r) => {
@@ -106,8 +90,7 @@ function Dashboard() {
   }, [filtered]);
 
   const reset = () => {
-    setRows([]);
-    setFilename("");
+    resetStore();
     setFilters(EMPTY_FILTERS);
   };
 
@@ -134,7 +117,15 @@ function Dashboard() {
       <AppHeader rightSlot={headerRight} badge="Defect leakage · QA effectiveness · Phase 1" />
 
       <main className="mx-auto max-w-[1400px] px-6 py-8">
-        {rows.length === 0 ? (
+        {!hydrated ? (
+          // Brief placeholder while we check IndexedDB for previously-loaded
+          // data; stops the dropzone from flashing on reload when data exists.
+          <div className="mx-auto max-w-2xl pt-24 text-center">
+            <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              ▸ Restoring session…
+            </p>
+          </div>
+        ) : rows.length === 0 ? (
           <div className="mx-auto max-w-2xl pt-16">
             <div className="mb-8 text-center">
               <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary">
@@ -149,8 +140,7 @@ function Dashboard() {
             </div>
             <CsvDropzone
               onLoaded={(r, f) => {
-                setRows(r);
-                setFilename(f);
+                setData(r, f);
               }}
             />
             <p className="mt-6 text-center text-xs text-muted-foreground">

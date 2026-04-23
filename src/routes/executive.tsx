@@ -1,9 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { TrendingDown, Clock, AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/dashboard/AppHeader";
+import { computeMetrics } from "@/lib/bug-data";
+import { useBugStore } from "@/lib/bug-store";
 
 export const Route = createFileRoute("/executive")({
   component: ExecutiveSummary,
@@ -84,27 +86,18 @@ const metrics: ExecMetric[] = [
 ];
 
 function ExecutiveSummary() {
-  const [liveLeakage, setLiveLeakage] = useState<{ leakagePct: number; total: number } | null>(null);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("bqd:liveMetrics");
-      if (raw) {
-        const parsed = JSON.parse(raw) as { leakagePct: number; total: number };
-        if (typeof parsed.leakagePct === "number") setLiveLeakage(parsed);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+  // Pull rows directly from the shared store (persisted in IndexedDB), rather
+  // than relying on a stale localStorage summary written by the Dashboard.
+  const { rows } = useBugStore();
+  const live = useMemo(() => (rows.length > 0 ? computeMetrics(rows) : null), [rows]);
 
   const resolved: ExecMetric[] = metrics.map((m) => {
-    if (m.label === "Leakage Rate" && liveLeakage) {
+    if (m.label === "Leakage Rate" && live) {
       return {
         ...m,
-        value: liveLeakage.leakagePct.toFixed(1),
-        trend: `Live · ${liveLeakage.total.toLocaleString()} bugs analysed`,
-        trendIsGood: liveLeakage.leakagePct <= 15,
+        value: live.leakagePct.toFixed(1),
+        trend: `Live · ${live.total.toLocaleString()} bugs analysed`,
+        trendIsGood: live.leakagePct <= 15,
       };
     }
     return m;

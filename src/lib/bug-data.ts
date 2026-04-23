@@ -55,12 +55,16 @@ const parseDate = (s: string): Date | null => {
 
 // Map a raw cell value to one of our Severity buckets.
 // Accepts P1/P2/P3 directly, or Jira Priority values (Highest/High/Medium/Low/Lowest).
+// Bucketing:
+//   P1 = Highest / Critical / Blocker
+//   P2 = High
+//   P3 = Medium / Normal / Low / Lowest / Trivial / Minor
 const toSeverity = (raw: string | undefined): Severity => {
   const v = (raw || "").trim().toUpperCase();
   if (v === "P1" || v === "P2" || v === "P3") return v;
   if (v === "HIGHEST" || v === "CRITICAL" || v === "BLOCKER") return "P1";
-  if (v === "HIGH") return "P1";
-  if (v === "MEDIUM" || v === "NORMAL") return "P2";
+  if (v === "HIGH") return "P2";
+  if (v === "MEDIUM" || v === "NORMAL") return "P3";
   if (v === "LOW" || v === "LOWEST" || v === "TRIVIAL" || v === "MINOR") return "P3";
   return "P3";
 };

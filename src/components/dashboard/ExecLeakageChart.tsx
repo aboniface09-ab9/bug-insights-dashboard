@@ -39,7 +39,6 @@ const COLOR_LINE = "oklch(0.78 0.16 195)"; // accent cyan
 const COLOR_TARGET = "oklch(0.72 0.17 155)"; // success green
 
 const DEFAULT_TARGET_PCT = 15;
-const ROLLING_WINDOW = 3;
 
 interface Props {
   rows: BugRow[];
@@ -51,20 +50,29 @@ interface Props {
  *
  * - Bars: per-month leakage % (bars above target are tinted red so at-a-glance
  *   it's obvious which months missed).
- * - Line: trailing {@link ROLLING_WINDOW}-month rolling average of leakage %.
- *   Smooths out a single spiky month so a casual reader sees the direction.
+ * - Line: the overall leakage rate across the entire loaded dataset, rendered
+ *   as a flat reference so execs can see how each month compares to the
+ *   period-wide average (matches the "Leakage Rate" KPI card above the chart).
  * - Reference line: the target threshold (default 15%).
  */
 export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props) {
-  const data = useMemo(() => {
-    // Aggregate per month.
+  const { data, overall } = useMemo(() => {
+    // Aggregate per month and compute the dataset-wide leakage in one pass.
     const byMonth = new Map<string, { month: string; total: number; prod: number }>();
+    let totalAll = 0;
+    let prodAll = 0;
     rows.forEach((r) => {
       const m = byMonth.get(r.month) ?? { month: r.month, total: 0, prod: 0 };
       m.total += 1;
-      if (r.environment === "PROD") m.prod += 1;
+      totalAll += 1;
+      if (r.environment === "PROD") {
+        m.prod += 1;
+        prodAll += 1;
+      }
       byMonth.set(r.month, m);
     });
+
+    const overallPct = totalAll ? Math.round((prodAll / totalAll) * 1000) / 10 : 0;
 
     const monthly = Array.from(byMonth.values())
       .sort((a, b) => a.month.localeCompare(b.month))
@@ -73,17 +81,10 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
         leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
         total: d.total,
         prod: d.prod,
+        overall: overallPct,
       }));
 
-    // Trailing rolling average. Months before the window fills use whatever
-    // data is available rather than null, so execs don't see a gap at the
-    // start of the chart.
-    return monthly.map((m, i) => {
-      const windowStart = Math.max(0, i - (ROLLING_WINDOW - 1));
-      const slice = monthly.slice(windowStart, i + 1);
-      const avg = slice.reduce((acc, s) => acc + s.leakage, 0) / slice.length;
-      return { ...m, rolling: Math.round(avg * 10) / 10 };
-    });
+    return { data: monthly, overall: overallPct };
   }, [rows]);
 
   if (data.length === 0) {
@@ -103,7 +104,7 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
         <div>
           <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Bars: each month's leakage %. Line: {ROLLING_WINDOW}-month rolling average. Dashed: {targetPct}% target.
+            Bars: each month's leakage %. Line: overall leakage rate ({overall}%) across the period. Dashed: {targetPct}% target.
           </p>
         </div>
         <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
@@ -169,12 +170,13 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
             </Bar>
             <Line
               type="monotone"
-              dataKey="rolling"
-              name={`${ROLLING_WINDOW}-mo rolling avg`}
+              dataKey="overall"
+              name="Overall leakage"
               stroke={COLOR_LINE}
               strokeWidth={2.5}
               dot={{ fill: COLOR_LINE, r: 3 }}
               activeDot={{ r: 5 }}
+              isAnimationActive={false}
             />
           </ComposedChart>
         </ResponsiveContainer>

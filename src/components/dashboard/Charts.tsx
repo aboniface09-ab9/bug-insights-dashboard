@@ -18,6 +18,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { TicketListDialog } from "./TicketListDialog";
 import type { BugRow, Severity, Environment } from "@/lib/bug-data";
+import { formatMonthLabel } from "@/lib/format";
 
 const COLORS = {
   P1: "oklch(0.65 0.24 25)",
@@ -131,13 +132,21 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
           const payload = (e as { activePayload?: Array<{ payload?: { month?: string } }> } | undefined)
             ?.activePayload?.[0]?.payload;
           const month = payload?.month;
-          if (month) openFor(`Leakage · ${month}`, `All bugs created in ${month}`, (r) => r.month === month);
+          if (month) {
+            const label = formatMonthLabel(month);
+            openFor(`Leakage · ${label}`, `All bugs created in ${label}`, (r) => r.month === month);
+          }
         }}
       >
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="month" {...axis} />
+        <XAxis dataKey="month" {...axis} tickFormatter={formatMonthLabel} />
         <YAxis {...axis} unit="%" />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
+          labelFormatter={(label) => formatMonthLabel(String(label))}
+        />
         <ReferenceLine
           y={15}
           stroke="oklch(0.72 0.17 155)"

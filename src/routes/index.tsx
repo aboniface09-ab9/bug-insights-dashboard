@@ -26,6 +26,7 @@ import {
   type Severity,
 } from "@/lib/bug-data";
 import { useBugStore } from "@/lib/bug-store";
+import { formatMonthLabel } from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   component: Dashboard,
@@ -199,6 +200,7 @@ function Dashboard() {
                   options={options.months}
                   selected={filters.months}
                   onChange={(s) => setFilters({ ...filters, months: s })}
+                  renderLabel={formatMonthLabel}
                   rows={rows}
                   accessor={(r) => r.month}
                 />

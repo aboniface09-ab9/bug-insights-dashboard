@@ -11,6 +11,12 @@ interface Props<T extends string> {
   selected: T[];
   onChange: (next: T[]) => void;
   /**
+   * Optional display transform for a chip's label. The raw option value is
+   * still used for equality/selection (e.g. show "Jan 2026" but store
+   * "2026-01").
+   */
+  renderLabel?: (opt: T) => string;
+  /**
    * If provided, each chip gets a small "view tickets" icon that opens a
    * drill-down dialog with the matching tickets, without changing the filter.
    * The accessor returns the row's value for this dimension (e.g. r => r.reporter).
@@ -24,6 +30,7 @@ export function FilterChips<T extends string>({
   options,
   selected,
   onChange,
+  renderLabel,
   rows,
   accessor,
 }: Props<T>) {
@@ -70,7 +77,7 @@ export function FilterChips<T extends string>({
                     : "border-border/60 bg-card hover:border-primary/60 hover:text-primary"
                 }`}
               >
-                {opt}
+                {renderLabel ? renderLabel(opt) : opt}
               </Badge>
               {showDrill && (
                 <button

@@ -14,29 +14,32 @@ import {
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import type { BugRow } from "@/lib/bug-data";
+import { CHART } from "@/lib/chart-colors";
 import { formatMonthLabel } from "@/lib/format";
 
-// Shared palette (kept in sync with Dashboard Charts.tsx).
-const axis = { stroke: "oklch(0.7 0.03 250)", fontSize: 11 };
-const grid = "oklch(0.32 0.04 254)";
+// All colour decisions live in `@/lib/chart-colors`. Keep this file free of
+// raw hex / oklch — go through the `CHART` palette so the Dashboard and
+// Executive views stay visually aligned.
+const axis = { stroke: CHART.axis, fontSize: 11 };
+const grid = CHART.grid;
 const tooltipStyle = {
-  backgroundColor: "oklch(0.22 0.035 254)",
-  border: "1px solid oklch(0.32 0.04 254)",
+  backgroundColor: CHART.tooltip.bg,
+  border: `1px solid ${CHART.tooltip.border}`,
   borderRadius: 8,
   fontSize: 12,
-  color: "oklch(0.96 0.01 250)",
+  color: CHART.tooltip.label,
 };
 const tooltipLabelStyle = {
-  color: "oklch(0.96 0.01 250)",
+  color: CHART.tooltip.label,
   fontWeight: 600,
   marginBottom: 4,
 };
-const tooltipItemStyle = { color: "oklch(0.9 0.02 250)" };
+const tooltipItemStyle = { color: CHART.tooltip.item };
 
-const COLOR_BAR_OK = "oklch(0.72 0.18 235)"; // primary blue — at or below target
-const COLOR_BAR_OVER = "oklch(0.72 0.11 50)"; // soft ochre — above target
-const COLOR_LINE = "oklch(0.78 0.16 195)"; // accent cyan
-const COLOR_TARGET = "oklch(0.72 0.17 155)"; // success green
+const COLOR_BAR_OK = CHART.primary;   // DARK CYAN — at or below target
+const COLOR_BAR_OVER = CHART.alert;   // PINK      — above target
+const COLOR_LINE = CHART.accent;      // CYAN      — running cumulative
+const COLOR_TARGET = CHART.success;   // TEAL      — target reference
 
 const DEFAULT_TARGET_PCT = 15;
 
@@ -133,7 +136,7 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
               contentStyle={tooltipStyle}
               labelStyle={tooltipLabelStyle}
               itemStyle={tooltipItemStyle}
-              cursor={{ fill: "oklch(0.28 0.04 254 / 0.4)" }}
+              cursor={{ fill: CHART.cursor }}
               labelFormatter={(label) => formatMonthLabel(String(label))}
               formatter={(value, name, entry) => {
                 const payload = (entry as { payload?: { total?: number; prod?: number } } | undefined)

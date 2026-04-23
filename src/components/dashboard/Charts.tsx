@@ -18,38 +18,39 @@ import {
 import { Card } from "@/components/ui/card";
 import { TicketListDialog } from "./TicketListDialog";
 import type { BugRow, Severity, Environment } from "@/lib/bug-data";
+import { CHART } from "@/lib/chart-colors";
 import { formatMonthLabel } from "@/lib/format";
 
-const COLORS = {
-  P1: "oklch(0.65 0.24 25)",
-  P2: "oklch(0.78 0.17 70)",
-  P3: "oklch(0.72 0.18 235)",
-  PROD: "oklch(0.65 0.24 25)",
-  UAT: "oklch(0.78 0.17 70)",
-  SIT: "oklch(0.78 0.16 195)",
-  DEV: "oklch(0.72 0.17 155)",
+// All colours come from the shared `CHART` palette — no raw hex/oklch here.
+// Severity + Environment reuse the same semantic roles so a P1 bar and a PROD
+// bar always draw in the same shade across every chart in the app.
+const COLORS: Record<Severity | Environment, string> = {
+  ...CHART.severity,
+  ...CHART.environment,
 };
 
-const axis = { stroke: "oklch(0.7 0.03 250)", fontSize: 11 };
-const grid = "oklch(0.32 0.04 254)";
+const axis = { stroke: CHART.axis, fontSize: 11 };
+const grid = CHART.grid;
 
 const tooltipStyle = {
-  backgroundColor: "oklch(0.22 0.035 254)",
-  border: "1px solid oklch(0.32 0.04 254)",
+  backgroundColor: CHART.tooltip.bg,
+  border: `1px solid ${CHART.tooltip.border}`,
   borderRadius: 8,
   fontSize: 12,
-  color: "oklch(0.96 0.01 250)",
+  color: CHART.tooltip.label,
 };
 
 const tooltipLabelStyle = {
-  color: "oklch(0.96 0.01 250)",
+  color: CHART.tooltip.label,
   fontWeight: 600,
   marginBottom: 4,
 };
 
 const tooltipItemStyle = {
-  color: "oklch(0.9 0.02 250)",
+  color: CHART.tooltip.item,
 };
+
+const cursorFill = { fill: CHART.cursor };
 
 interface ChartCardProps {
   title: string;
@@ -149,13 +150,13 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
         />
         <ReferenceLine
           y={15}
-          stroke="oklch(0.72 0.17 155)"
+          stroke={CHART.success}
           strokeDasharray="6 4"
           strokeWidth={1.5}
           label={{
             value: "Target 15%",
             position: "insideTopRight",
-            fill: "oklch(0.72 0.17 155)",
+            fill: CHART.success,
             fontSize: 11,
             fontFamily: "JetBrains Mono, monospace",
           }}
@@ -163,9 +164,9 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
         <Line
           type="monotone"
           dataKey="leakage"
-          stroke="oklch(0.72 0.18 235)"
+          stroke={CHART.primary}
           strokeWidth={2.5}
-          dot={{ fill: "oklch(0.72 0.18 235)", r: 4, cursor: "pointer" }}
+          dot={{ fill: CHART.primary, r: 4, cursor: "pointer" }}
           activeDot={{ r: 6, cursor: "pointer" }}
         />
       </LineChart>
@@ -224,10 +225,10 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="system" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
         <Bar
           dataKey="count"
-          fill="oklch(0.78 0.16 195)"
+          fill={CHART.accent}
           radius={[6, 6, 0, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -260,7 +261,7 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
           contentStyle={tooltipStyle}
           labelStyle={tooltipLabelStyle}
           itemStyle={tooltipItemStyle}
-          cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
+          cursor={cursorFill}
           formatter={(v) => [`${v} bugs (${((Number(v) / total) * 100).toFixed(0)}% of total)`, "Caught"]}
         />
         <Bar
@@ -297,10 +298,10 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" {...axis} />
         <YAxis type="category" dataKey="reporter" {...axis} width={120} tick={{ fontSize: 10 }} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
         <Bar
           dataKey="count"
-          fill="oklch(0.72 0.18 235)"
+          fill={CHART.primary}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -329,10 +330,10 @@ export function ComponentChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" {...axis} />
         <YAxis type="category" dataKey="component" {...axis} width={140} tick={{ fontSize: 10 }} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
         <Bar
           dataKey="count"
-          fill="oklch(0.78 0.16 195)"
+          fill={CHART.accent}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -374,7 +375,7 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
           contentStyle={tooltipStyle}
           labelStyle={tooltipLabelStyle}
           itemStyle={tooltipItemStyle}
-          cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }}
+          cursor={cursorFill}
           formatter={(v, _n, p) => {
             const payload = (p as { payload?: { n?: number } } | undefined)?.payload;
             return [`${v}d (${payload?.n ?? 0} resolved)`, "Avg MTTR"];
@@ -382,7 +383,7 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
         />
         <Bar
           dataKey="mttr"
-          fill="oklch(0.78 0.17 70)"
+          fill={CHART.deep}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -410,7 +411,7 @@ export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="env" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={{ fill: "oklch(0.28 0.04 254 / 0.5)" }} />
+        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
         <Bar
           dataKey="count"
           radius={[6, 6, 0, 0]}

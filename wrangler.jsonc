@@ -4,4 +4,10 @@
   "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
+  // Static assets (JS/CSS/images bundled by vite) are emitted to
+  // dist/client/ during build; point Workers at that directory so the
+  // "/assets/..." URLs from index.html resolve instead of 404'ing.
+  "assets": {
+    "directory": "./dist/client",
+  },
 }

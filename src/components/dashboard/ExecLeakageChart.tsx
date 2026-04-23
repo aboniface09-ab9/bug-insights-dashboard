@@ -14,32 +14,34 @@ import {
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import type { BugRow } from "@/lib/bug-data";
+import { CHART } from "@/lib/chart-colors";
 import { formatMonthLabel } from "@/lib/format";
 
-// Shared palette (kept in sync with Dashboard Charts.tsx).
-const axis = { stroke: "oklch(0.7 0.03 250)", fontSize: 11 };
-const grid = "oklch(0.32 0.04 254)";
+// All colour decisions live in `@/lib/chart-colors`. Keep this file free of
+// raw hex / oklch — go through the `CHART` palette so the Dashboard and
+// Executive views stay visually aligned.
+const axis = { stroke: CHART.axis, fontSize: 11 };
+const grid = CHART.grid;
 const tooltipStyle = {
-  backgroundColor: "oklch(0.22 0.035 254)",
-  border: "1px solid oklch(0.32 0.04 254)",
+  backgroundColor: CHART.tooltip.bg,
+  border: `1px solid ${CHART.tooltip.border}`,
   borderRadius: 8,
   fontSize: 12,
-  color: "oklch(0.96 0.01 250)",
+  color: CHART.tooltip.label,
 };
 const tooltipLabelStyle = {
-  color: "oklch(0.96 0.01 250)",
+  color: CHART.tooltip.label,
   fontWeight: 600,
   marginBottom: 4,
 };
-const tooltipItemStyle = { color: "oklch(0.9 0.02 250)" };
+const tooltipItemStyle = { color: CHART.tooltip.item };
 
-const COLOR_BAR_OK = "oklch(0.72 0.18 235)"; // primary blue
-const COLOR_BAR_OVER = "oklch(0.65 0.24 25)"; // critical red
-const COLOR_LINE = "oklch(0.78 0.16 195)"; // accent cyan
-const COLOR_TARGET = "oklch(0.72 0.17 155)"; // success green
+const COLOR_BAR_OK = CHART.primary;   // DARK CYAN — at or below target
+const COLOR_BAR_OVER = CHART.alert;   // PINK      — above target
+const COLOR_LINE = CHART.accent;      // CYAN      — running cumulative
+const COLOR_TARGET = CHART.success;   // TEAL      — target reference
 
 const DEFAULT_TARGET_PCT = 15;
-const ROLLING_WINDOW = 3;
 
 interface Props {
   rows: BugRow[];
@@ -51,12 +53,15 @@ interface Props {
  *
  * - Bars: per-month leakage % (bars above target are tinted red so at-a-glance
  *   it's obvious which months missed).
- * - Line: trailing {@link ROLLING_WINDOW}-month rolling average of leakage %.
- *   Smooths out a single spiky month so a casual reader sees the direction.
+ * - Line: the running *cumulative* leakage rate — at each month the value
+ *   reflects the overall leakage across every month up to and including that
+ *   one. So a great month will visibly drag the overall line down, and a bad
+ *   month will pull it up. The final point equals the headline Leakage Rate
+ *   KPI shown above the chart.
  * - Reference line: the target threshold (default 15%).
  */
 export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props) {
-  const data = useMemo(() => {
+  const { data, overall } = useMemo(() => {
     // Aggregate per month.
     const byMonth = new Map<string, { month: string; total: number; prod: number }>();
     rows.forEach((r) => {
@@ -66,24 +71,28 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
       byMonth.set(r.month, m);
     });
 
+    // Running cumulative totals as we walk forward in time.
+    let cumTotal = 0;
+    let cumProd = 0;
     const monthly = Array.from(byMonth.values())
       .sort((a, b) => a.month.localeCompare(b.month))
-      .map((d) => ({
-        month: d.month,
-        leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
-        total: d.total,
-        prod: d.prod,
-      }));
+      .map((d) => {
+        cumTotal += d.total;
+        cumProd += d.prod;
+        const cumPct = cumTotal ? Math.round((cumProd / cumTotal) * 1000) / 10 : 0;
+        return {
+          month: d.month,
+          leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
+          total: d.total,
+          prod: d.prod,
+          cumulative: cumPct,
+        };
+      });
 
-    // Trailing rolling average. Months before the window fills use whatever
-    // data is available rather than null, so execs don't see a gap at the
-    // start of the chart.
-    return monthly.map((m, i) => {
-      const windowStart = Math.max(0, i - (ROLLING_WINDOW - 1));
-      const slice = monthly.slice(windowStart, i + 1);
-      const avg = slice.reduce((acc, s) => acc + s.leakage, 0) / slice.length;
-      return { ...m, rolling: Math.round(avg * 10) / 10 };
-    });
+    // Final cumulative point equals the overall dataset leakage.
+    const overallPct = monthly.length ? monthly[monthly.length - 1].cumulative : 0;
+
+    return { data: monthly, overall: overallPct };
   }, [rows]);
 
   if (data.length === 0) {
@@ -103,7 +112,7 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
         <div>
           <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Bars: each month's leakage %. Line: {ROLLING_WINDOW}-month rolling average. Dashed: {targetPct}% target.
+            Bars: each month's leakage %. Line: overall rate to date (ends at {overall}%). Dashed: {targetPct}% target.
           </p>
         </div>
         <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
@@ -127,7 +136,7 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
               contentStyle={tooltipStyle}
               labelStyle={tooltipLabelStyle}
               itemStyle={tooltipItemStyle}
-              cursor={{ fill: "oklch(0.28 0.04 254 / 0.4)" }}
+              cursor={{ fill: CHART.cursor }}
               labelFormatter={(label) => formatMonthLabel(String(label))}
               formatter={(value, name, entry) => {
                 const payload = (entry as { payload?: { total?: number; prod?: number } } | undefined)
@@ -169,12 +178,13 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
             </Bar>
             <Line
               type="monotone"
-              dataKey="rolling"
-              name={`${ROLLING_WINDOW}-mo rolling avg`}
+              dataKey="cumulative"
+              name="Overall to date"
               stroke={COLOR_LINE}
               strokeWidth={2.5}
               dot={{ fill: COLOR_LINE, r: 3 }}
               activeDot={{ r: 5 }}
+              isAnimationActive={false}
             />
           </ComposedChart>
         </ResponsiveContainer>

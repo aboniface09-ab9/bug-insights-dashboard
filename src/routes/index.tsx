@@ -148,10 +148,10 @@ function Dashboard() {
                 ▸ Phase 1 · Live preview
               </p>
               <h2 className="mt-3 font-display text-4xl font-semibold tracking-tight">
-                See what's <span className="bg-[var(--gradient-primary)] bg-clip-text text-transparent">leaking</span> to production.
+                Your engineering <span className="text-primary">health</span>, at a glance.
               </h2>
               <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
-                Replace manual QA reports with a live, filterable dashboard built from your Jira exports.
+                Leakage, MTTR and defect trends in one live, filterable view.
               </p>
             </div>
             <CsvDropzone

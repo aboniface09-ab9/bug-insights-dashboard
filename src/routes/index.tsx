@@ -60,15 +60,30 @@ function Dashboard() {
   const options = useMemo(() => {
     const systems = Array.from(new Set(rows.map((r) => r.system))).sort();
     const months = Array.from(new Set(rows.map((r) => r.month))).sort();
-    const tally = (key: "reporter" | "component") => {
-      const m = new Map<string, number>();
-      rows.forEach((r) => m.set(r[key], (m.get(r[key]) ?? 0) + 1));
-      return Array.from(m.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 15)
+    // For reporter/component we render the top 5 as always-visible chips and
+    // expose the rest (alphabetical) through a searchable picker. This keeps
+    // the filter card compact while still letting users filter by anyone.
+    const TOP = 5;
+    const splitByFrequency = (key: "reporter" | "component") => {
+      const tally = new Map<string, number>();
+      rows.forEach((r) => tally.set(r[key], (tally.get(r[key]) ?? 0) + 1));
+      const sortedByFreq = Array.from(tally.entries())
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
         .map(([v]) => v);
+      const top = sortedByFreq.slice(0, TOP);
+      const rest = sortedByFreq.slice(TOP).sort((a, b) => a.localeCompare(b));
+      return { top, rest };
     };
-    return { systems, months, reporters: tally("reporter"), components: tally("component") };
+    const reporter = splitByFrequency("reporter");
+    const component = splitByFrequency("component");
+    return {
+      systems,
+      months,
+      reporters: reporter.top,
+      reportersExtras: reporter.rest,
+      components: component.top,
+      componentsExtras: component.rest,
+    };
   }, [rows]);
 
   const filtered = useMemo(() => applyFilters(rows, filters), [rows, filters]);
@@ -213,16 +228,18 @@ function Dashboard() {
                   accessor={(r) => r.environment}
                 />
                 <FilterChips
-                  label="Reporter (top 15)"
+                  label="Reporter"
                   options={options.reporters}
+                  extraOptions={options.reportersExtras}
                   selected={filters.reporters}
                   onChange={(s) => setFilters({ ...filters, reporters: s })}
                   rows={rows}
                   accessor={(r) => r.reporter}
                 />
                 <FilterChips
-                  label="Component (top 15)"
+                  label="Component"
                   options={options.components}
+                  extraOptions={options.componentsExtras}
                   selected={filters.components}
                   onChange={(s) => setFilters({ ...filters, components: s })}
                   rows={rows}

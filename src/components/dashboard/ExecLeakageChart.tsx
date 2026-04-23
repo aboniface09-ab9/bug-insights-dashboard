@@ -50,39 +50,44 @@ interface Props {
  *
  * - Bars: per-month leakage % (bars above target are tinted red so at-a-glance
  *   it's obvious which months missed).
- * - Line: the overall leakage rate across the entire loaded dataset, rendered
- *   as a flat reference so execs can see how each month compares to the
- *   period-wide average (matches the "Leakage Rate" KPI card above the chart).
+ * - Line: the running *cumulative* leakage rate — at each month the value
+ *   reflects the overall leakage across every month up to and including that
+ *   one. So a great month will visibly drag the overall line down, and a bad
+ *   month will pull it up. The final point equals the headline Leakage Rate
+ *   KPI shown above the chart.
  * - Reference line: the target threshold (default 15%).
  */
 export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props) {
   const { data, overall } = useMemo(() => {
-    // Aggregate per month and compute the dataset-wide leakage in one pass.
+    // Aggregate per month.
     const byMonth = new Map<string, { month: string; total: number; prod: number }>();
-    let totalAll = 0;
-    let prodAll = 0;
     rows.forEach((r) => {
       const m = byMonth.get(r.month) ?? { month: r.month, total: 0, prod: 0 };
       m.total += 1;
-      totalAll += 1;
-      if (r.environment === "PROD") {
-        m.prod += 1;
-        prodAll += 1;
-      }
+      if (r.environment === "PROD") m.prod += 1;
       byMonth.set(r.month, m);
     });
 
-    const overallPct = totalAll ? Math.round((prodAll / totalAll) * 1000) / 10 : 0;
-
+    // Running cumulative totals as we walk forward in time.
+    let cumTotal = 0;
+    let cumProd = 0;
     const monthly = Array.from(byMonth.values())
       .sort((a, b) => a.month.localeCompare(b.month))
-      .map((d) => ({
-        month: d.month,
-        leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
-        total: d.total,
-        prod: d.prod,
-        overall: overallPct,
-      }));
+      .map((d) => {
+        cumTotal += d.total;
+        cumProd += d.prod;
+        const cumPct = cumTotal ? Math.round((cumProd / cumTotal) * 1000) / 10 : 0;
+        return {
+          month: d.month,
+          leakage: d.total ? Math.round((d.prod / d.total) * 1000) / 10 : 0,
+          total: d.total,
+          prod: d.prod,
+          cumulative: cumPct,
+        };
+      });
+
+    // Final cumulative point equals the overall dataset leakage.
+    const overallPct = monthly.length ? monthly[monthly.length - 1].cumulative : 0;
 
     return { data: monthly, overall: overallPct };
   }, [rows]);
@@ -104,7 +109,7 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
         <div>
           <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Bars: each month's leakage %. Line: overall leakage rate ({overall}%) across the period. Dashed: {targetPct}% target.
+            Bars: each month's leakage %. Line: overall rate to date (ends at {overall}%). Dashed: {targetPct}% target.
           </p>
         </div>
         <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
@@ -170,8 +175,8 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
             </Bar>
             <Line
               type="monotone"
-              dataKey="overall"
-              name="Overall leakage"
+              dataKey="cumulative"
+              name="Overall to date"
               stroke={COLOR_LINE}
               strokeWidth={2.5}
               dot={{ fill: COLOR_LINE, r: 3 }}

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { computeMetrics } from "@/lib/bug-data";
 import { useBugStore } from "@/lib/bug-store";
+import { ExecLeakageChart } from "@/components/dashboard/ExecLeakageChart";
 
 export const Route = createFileRoute("/executive")({
   component: ExecutiveSummary,
@@ -181,6 +182,10 @@ function ExecutiveSummary() {
               </p>
             </Card>
           ))}
+        </div>
+
+        <div className="mt-8">
+          <ExecLeakageChart rows={rows} />
         </div>
 
         <Card className="mt-8 border-border/60 bg-card/40 p-5">

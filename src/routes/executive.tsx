@@ -3,6 +3,13 @@ import { useMemo } from "react";
 import { TrendingDown, Clock, AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { computeMetrics } from "@/lib/bug-data";
 import { useBugStore } from "@/lib/bug-store";
@@ -86,6 +93,60 @@ const metrics: ExecMetric[] = [
   },
 ];
 
+// Small presentational component for a single KPI tile. Extracted so both
+// the top row (Leakage Rate) and the bottom row (other three metrics) can
+// share the exact same layout without duplicating the JSX.
+function MetricTile({ m }: { m: ExecMetric }) {
+  return (
+    <Card className="relative overflow-hidden border-border/60 bg-[var(--gradient-surface)] p-6 shadow-[var(--shadow-card)]">
+      <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: m.accent }} />
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-lg"
+            style={{ background: `color-mix(in oklab, ${m.accent} 18%, transparent)` }}
+          >
+            <m.icon className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              {m.label}
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground/80">{m.description}</p>
+          </div>
+        </div>
+        {m.isSample && (
+          <Badge
+            variant="outline"
+            className="border-[var(--warning)]/40 bg-[var(--warning)]/10 font-mono text-[9px] uppercase tracking-[0.15em] text-[var(--warning)]"
+          >
+            <Sparkles className="mr-1 h-2.5 w-2.5" />
+            Sample
+          </Badge>
+        )}
+      </div>
+
+      <div className="mt-6 flex items-baseline gap-2">
+        <span className="font-display text-5xl font-semibold tracking-tight">{m.value}</span>
+        {m.unit && <span className="font-mono text-sm text-muted-foreground">{m.unit}</span>}
+      </div>
+
+      <p
+        className="mt-3 font-mono text-[11px]"
+        style={{
+          color: m.trendIsGood
+            ? "oklch(0.72 0.17 155)"
+            : m.trendDirection === "flat"
+            ? "oklch(0.7 0.03 250)"
+            : "oklch(0.65 0.24 25)",
+        }}
+      >
+        {m.trend}
+      </p>
+    </Card>
+  );
+}
+
 function ExecutiveSummary() {
   // Pull rows directly from the shared store (persisted in IndexedDB), rather
   // than relying on a stale localStorage summary written by the Dashboard.
@@ -108,12 +169,12 @@ function ExecutiveSummary() {
     <div className="min-h-screen bg-background">
       <AppHeader badge="For executive review · key engineering metrics" />
 
-      <main className="mx-auto max-w-[1400px] px-6 py-10">
-        <div className="mb-8">
+      <main className="mx-auto max-w-[1400px] px-6 py-8">
+        <div className="mb-6">
           <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-primary">
             ▸ Executive Summary
           </p>
-          <h2 className="mt-3 font-display text-3xl font-semibold tracking-tight">
+          <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">
             Engineering health at a glance
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -123,72 +184,43 @@ function ExecutiveSummary() {
           </p>
         </div>
 
+        {/* Row 1: Leakage Rate card + its monthly trend chart, side-by-side.
+            Row 2: the other three KPI cards. This keeps everything visible
+            without scrolling while pairing the chart with the metric it shows. */}
         <div className="grid gap-5 md:grid-cols-2">
-          {resolved.map((m) => (
-            <Card
-              key={m.label}
-              className="relative overflow-hidden border-border/60 bg-[var(--gradient-surface)] p-6 shadow-[var(--shadow-card)]"
-            >
-              <div
-                className="absolute inset-x-0 top-0 h-0.5"
-                style={{ background: m.accent }}
-              />
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="flex h-10 w-10 items-center justify-center rounded-lg"
-                    style={{ background: `color-mix(in oklab, ${m.accent} 18%, transparent)` }}
-                  >
-                    <m.icon className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                      {m.label}
-                    </p>
-                    <p className="mt-0.5 text-xs text-muted-foreground/80">{m.description}</p>
-                  </div>
-                </div>
-                {m.isSample && (
-                  <Badge
-                    variant="outline"
-                    className="border-[var(--warning)]/40 bg-[var(--warning)]/10 font-mono text-[9px] uppercase tracking-[0.15em] text-[var(--warning)]"
-                  >
-                    <Sparkles className="mr-1 h-2.5 w-2.5" />
-                    Sample
-                  </Badge>
-                )}
-              </div>
+          {/* Leakage Rate metric card (first item in `resolved`) */}
+          {resolved.slice(0, 1).map((m) => (
+            <MetricTile key={m.label} m={m} />
+          ))}
 
-              <div className="mt-6 flex items-baseline gap-2">
-                <span className="font-display text-5xl font-semibold tracking-tight">
-                  {m.value}
-                </span>
-                {m.unit && (
-                  <span className="font-mono text-sm text-muted-foreground">{m.unit}</span>
-                )}
-              </div>
-
-              <p
-                className="mt-3 font-mono text-[11px]"
-                style={{
-                  color: m.trendIsGood
-                    ? "oklch(0.72 0.17 155)"
-                    : m.trendDirection === "flat"
-                    ? "oklch(0.7 0.03 250)"
-                    : "oklch(0.65 0.24 25)",
-                }}
+          {/* Compact chart → click opens a modal with the full-size version */}
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                aria-label="Expand leakage rate chart"
+                className="block w-full cursor-pointer rounded-xl text-left outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
               >
-                {m.trend}
-              </p>
-            </Card>
+                <ExecLeakageChart rows={rows} compact />
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-5xl border-border/60 bg-[var(--gradient-surface)]">
+              <DialogTitle className="sr-only">Leakage Rate — Monthly Trend</DialogTitle>
+              <DialogDescription className="sr-only">
+                Per-month leakage % with running cumulative rate and target reference line.
+              </DialogDescription>
+              <ExecLeakageChart rows={rows} />
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="mt-5 grid gap-5 md:grid-cols-3">
+          {resolved.slice(1).map((m) => (
+            <MetricTile key={m.label} m={m} />
           ))}
         </div>
 
-        <div className="mt-8">
-          <ExecLeakageChart rows={rows} />
-        </div>
-
-        <Card className="mt-8 border-border/60 bg-card/40 p-5">
+        <Card className="mt-6 border-border/60 bg-card/40 p-5">
           <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
             Notes
           </p>

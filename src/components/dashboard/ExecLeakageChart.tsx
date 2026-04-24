@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Maximize2 } from "lucide-react";
 import {
   Bar,
   CartesianGrid,
@@ -46,6 +47,13 @@ const DEFAULT_TARGET_PCT = 15;
 interface Props {
   rows: BugRow[];
   targetPct?: number;
+  /**
+   * Compact mode renders a metric-card-sized chart suitable for fitting
+   * alongside the KPI cards at the top of the Executive page. The full
+   * version (taller, with legend + long subtitle) is used inside the
+   * click-to-expand modal.
+   */
+  compact?: boolean;
 }
 
 /**
@@ -60,7 +68,7 @@ interface Props {
  *   KPI shown above the chart.
  * - Reference line: the target threshold (default 15%).
  */
-export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props) {
+export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact = false }: Props) {
   const { data, overall } = useMemo(() => {
     // Aggregate per month.
     const byMonth = new Map<string, { month: string; total: number; prod: number }>();
@@ -97,7 +105,7 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
 
   if (data.length === 0) {
     return (
-      <Card className="border-border/60 bg-[var(--gradient-surface)] p-8 text-center shadow-[var(--shadow-card)]">
+      <Card className={`border-border/60 bg-[var(--gradient-surface)] ${compact ? "p-5" : "p-8"} text-center shadow-[var(--shadow-card)]`}>
         <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Upload a Jira CSV on the Dashboard to populate this chart.
@@ -106,27 +114,71 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
     );
   }
 
+  // Status used both to tint the top accent stripe and colour the KPI footer.
+  const onTarget = overall <= targetPct;
+  const statusColor = onTarget ? CHART.success : CHART.alert;
+
   return (
-    <Card className="border-border/60 bg-[var(--gradient-surface)] p-5 shadow-[var(--shadow-card)]">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Bars: each month's leakage %. Line: overall rate to date (ends at {overall}%). Dashed: {targetPct}% target.
-          </p>
+    <Card
+      className={`relative overflow-hidden border-border/60 bg-[var(--gradient-surface)] ${
+        compact ? "p-5" : "p-6"
+      } shadow-[var(--shadow-card)] ${compact ? "transition-transform hover:-translate-y-0.5" : ""}`}
+    >
+      {/* Top accent stripe in compact mode — matches the metric cards so the
+          chart tile reads as one of the KPI family rather than a standalone. */}
+      {compact && (
+        <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: statusColor }} />
+      )}
+
+      {compact ? (
+        <div className="mb-3 flex items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              Leakage Rate
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground/80">
+              Monthly trend · target {targetPct}%
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="text-right">
+              <div className="flex items-baseline justify-end gap-1">
+                <span className="font-display text-3xl font-semibold tracking-tight">
+                  {overall}
+                </span>
+                <span className="font-mono text-xs text-muted-foreground">%</span>
+              </div>
+              <p
+                className="font-mono text-[10px] uppercase tracking-[0.15em]"
+                style={{ color: statusColor }}
+              >
+                {onTarget ? "On target" : `${(overall - targetPct).toFixed(1)}pp over`}
+              </p>
+            </div>
+            <Maximize2 className="h-4 w-4 text-muted-foreground/50" />
+          </div>
         </div>
-        <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-sm" style={{ background: COLOR_BAR_OK }} />
-            On target
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-sm" style={{ background: COLOR_BAR_OVER }} />
-            Over
-          </span>
+      ) : (
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Bars: each month's leakage %. Line: overall rate to date (ends at {overall}%). Dashed: {targetPct}% target.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm" style={{ background: COLOR_BAR_OK }} />
+              On target
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm" style={{ background: COLOR_BAR_OVER }} />
+              Over
+            </span>
+          </div>
         </div>
-      </div>
-      <div className="h-72">
+      )}
+      <div className={compact ? "h-32" : "h-96"}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
             <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
@@ -150,23 +202,29 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT }: Props
                 return [`${value}%`, name];
               }}
             />
-            <Legend
-              wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-              iconType="square"
-            />
+            {!compact && (
+              <Legend
+                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                iconType="square"
+              />
+            )}
             <ReferenceLine
               y={targetPct}
               stroke={COLOR_TARGET}
               strokeDasharray="6 4"
               strokeWidth={1.5}
               ifOverflow="extendDomain"
-              label={{
-                value: `Target ${targetPct}%`,
-                position: "insideTopRight",
-                fill: COLOR_TARGET,
-                fontSize: 11,
-                fontFamily: "JetBrains Mono, monospace",
-              }}
+              label={
+                compact
+                  ? undefined
+                  : {
+                      value: `Target ${targetPct}%`,
+                      position: "insideTopRight",
+                      fill: COLOR_TARGET,
+                      fontSize: 11,
+                      fontFamily: "JetBrains Mono, monospace",
+                    }
+              }
             />
             <Bar dataKey="leakage" name="Leakage %" radius={[6, 6, 0, 0]}>
               {data.map((d) => (

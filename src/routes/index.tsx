@@ -32,7 +32,7 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
   head: () => ({
     meta: [
-      { title: "Bug Quality Dashboard — Defect Leakage & QA Metrics" },
+      { title: "Transaction Junction — Bug Quality Dashboard" },
       {
         name: "description",
         content:

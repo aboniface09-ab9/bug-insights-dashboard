@@ -1,5 +1,5 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Activity, CircleDot } from "lucide-react";
+import { CircleDot } from "lucide-react";
 
 interface Props {
   rightSlot?: React.ReactNode;
@@ -17,8 +17,16 @@ export function AppHeader({ rightSlot, badge }: Props) {
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-between gap-3 px-6 py-4">
         <div className="flex items-center gap-3">
-          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--gradient-primary)] shadow-[var(--shadow-glow)]">
-            <Activity className="h-5 w-5 text-primary-foreground" />
+          {/* Transaction Junction emblem — subtle brand mark. The pulsing green
+              dot is kept from the previous mark as a live/activity indicator. */}
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-card/60">
+            <img
+              src="/tj-mark.svg"
+              alt="Transaction Junction"
+              className="h-6 w-6"
+              width={24}
+              height={24}
+            />
             <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--success)] opacity-75" />
               <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--success)]" />

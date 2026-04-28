@@ -30,20 +30,28 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Transaction Junction — Bug Quality Dashboard" },
+      {
+        name: "description",
+        content:
+          "Transaction Junction · Interactive dashboard for defect leakage and QA effectiveness.",
+      },
+      { name: "author", content: "Transaction Junction" },
+      { name: "theme-color", content: "#00c1ff" },
+      { property: "og:title", content: "Transaction Junction — Bug Quality Dashboard" },
+      {
+        property: "og:description",
+        content: "Interactive dashboard for defect leakage and QA effectiveness.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      // SVG favicon is served statically from /public. Modern browsers use it
+      // directly; older ones fall back to the apple-touch-icon alias.
+      { rel: "icon", type: "image/svg+xml", href: "/tj-mark.svg" },
+      { rel: "apple-touch-icon", href: "/tj-mark.svg" },
     ],
   }),
   shellComponent: RootShell,

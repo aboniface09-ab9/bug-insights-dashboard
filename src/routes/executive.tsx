@@ -19,7 +19,7 @@ export const Route = createFileRoute("/executive")({
   component: ExecutiveSummary,
   head: () => ({
     meta: [
-      { title: "Executive Summary — Key Engineering Metrics" },
+      { title: "Transaction Junction — Executive Summary" },
       {
         name: "description",
         content:

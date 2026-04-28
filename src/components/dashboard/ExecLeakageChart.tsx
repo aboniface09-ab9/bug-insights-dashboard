@@ -3,7 +3,6 @@ import { Maximize2 } from "lucide-react";
 import {
   Bar,
   CartesianGrid,
-  Cell,
   ComposedChart,
   Legend,
   Line,
@@ -37,10 +36,12 @@ const tooltipLabelStyle = {
 };
 const tooltipItemStyle = { color: CHART.tooltip.item };
 
-const COLOR_BAR_OK = CHART.primary;   // DARK CYAN — at or below target
-const COLOR_BAR_OVER = CHART.alert;   // PINK      — above target
-const COLOR_LINE = CHART.accent;      // CYAN      — running cumulative
-const COLOR_TARGET = CHART.success;   // TEAL      — target reference
+// Leakage chart lives in the blue family so it reads as a single, calm visual.
+// The TARGET line (pink) does the work of flagging over-target months — bars
+// that poke above it are visually obvious without needing a second hue.
+const COLOR_BAR = CHART.primary; // DARK CYAN  — every bar (regardless of status)
+const COLOR_LINE = CHART.deep; // DEEP BLUE  — running cumulative
+const COLOR_TARGET = CHART.alert; // PINK       — target reference (high contrast)
 
 const DEFAULT_TARGET_PCT = 15;
 
@@ -59,14 +60,16 @@ interface Props {
 /**
  * Executive-page leakage trend chart.
  *
- * - Bars: per-month leakage % (bars above target are tinted red so at-a-glance
- *   it's obvious which months missed).
- * - Line: the running *cumulative* leakage rate — at each month the value
- *   reflects the overall leakage across every month up to and including that
- *   one. So a great month will visibly drag the overall line down, and a bad
- *   month will pull it up. The final point equals the headline Leakage Rate
- *   KPI shown above the chart.
- * - Reference line: the target threshold (default 15%).
+ * - Bars: per-month leakage %, all rendered in the same dark-cyan blue. Bars
+ *   that poke above the target reference line ARE the over-target signal —
+ *   the dashed pink target line draws the eye and bars crossing it read as
+ *   obvious without needing a second bar colour.
+ * - Line: the running *cumulative* leakage rate (deep blue). At each month the
+ *   value reflects overall leakage across every month up to and including that
+ *   one. A great month visibly drags the line down; a bad month pulls it up.
+ *   The final point equals the headline Leakage Rate KPI shown above.
+ * - Reference line: the target threshold (default 15%), drawn thicker and in
+ *   pink so it's the first thing the eye locks onto.
  */
 export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact = false }: Props) {
   const { data, overall } = useMemo(() => {
@@ -105,7 +108,9 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
 
   if (data.length === 0) {
     return (
-      <Card className={`border-border/60 bg-[var(--gradient-surface)] ${compact ? "p-5" : "p-8"} text-center shadow-[var(--shadow-card)]`}>
+      <Card
+        className={`border-border/60 bg-[var(--gradient-surface)] ${compact ? "p-5" : "p-8"} text-center shadow-[var(--shadow-card)]`}
+      >
         <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
         <p className="mt-2 text-sm text-muted-foreground">
           Upload a Jira CSV on the Dashboard to populate this chart.
@@ -163,18 +168,9 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
           <div>
             <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Bars: each month's leakage %. Line: overall rate to date (ends at {overall}%). Dashed: {targetPct}% target.
+              Bars: each month's leakage %. Line: overall rate to date (ends at {overall}%). Dashed
+              pink: {targetPct}% target — any bar above it is a miss.
             </p>
-          </div>
-          <div className="flex items-center gap-3 font-mono text-[10px] uppercase tracking-[0.15em] text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm" style={{ background: COLOR_BAR_OK }} />
-              On target
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm" style={{ background: COLOR_BAR_OVER }} />
-              Over
-            </span>
           </div>
         </div>
       )}
@@ -191,8 +187,9 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
               cursor={{ fill: CHART.cursor }}
               labelFormatter={(label) => formatMonthLabel(String(label))}
               formatter={(value, name, entry) => {
-                const payload = (entry as { payload?: { total?: number; prod?: number } } | undefined)
-                  ?.payload;
+                const payload = (
+                  entry as { payload?: { total?: number; prod?: number } } | undefined
+                )?.payload;
                 if (name === "Leakage %") {
                   return [
                     `${value}% (${payload?.prod ?? 0} of ${payload?.total ?? 0} in PROD)`,
@@ -203,37 +200,27 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
               }}
             />
             {!compact && (
-              <Legend
-                wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                iconType="square"
-              />
+              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} iconType="square" />
             )}
             <ReferenceLine
               y={targetPct}
               stroke={COLOR_TARGET}
-              strokeDasharray="6 4"
-              strokeWidth={1.5}
+              strokeDasharray="8 4"
+              strokeWidth={2.5}
               ifOverflow="extendDomain"
-              label={
-                compact
-                  ? undefined
-                  : {
-                      value: `Target ${targetPct}%`,
-                      position: "insideTopRight",
-                      fill: COLOR_TARGET,
-                      fontSize: 11,
-                      fontFamily: "JetBrains Mono, monospace",
-                    }
-              }
+              label={{
+                // Keep the label compact in small mode — just the numeric
+                // target ("15%") next to the line. Full mode gets the longer
+                // "Target 15%" string since there's room.
+                value: compact ? `${targetPct}%` : `Target ${targetPct}%`,
+                position: "insideTopRight",
+                fill: COLOR_TARGET,
+                fontSize: compact ? 10 : 11,
+                fontFamily: "JetBrains Mono, monospace",
+                fontWeight: 600,
+              }}
             />
-            <Bar dataKey="leakage" name="Leakage %" radius={[6, 6, 0, 0]}>
-              {data.map((d) => (
-                <Cell
-                  key={d.month}
-                  fill={d.leakage > targetPct ? COLOR_BAR_OVER : COLOR_BAR_OK}
-                />
-              ))}
-            </Bar>
+            <Bar dataKey="leakage" name="Leakage %" radius={[6, 6, 0, 0]} fill={COLOR_BAR} />
             <Line
               type="monotone"
               dataKey="cumulative"

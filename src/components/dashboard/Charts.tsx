@@ -130,8 +130,9 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
         data={data}
         margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
         onClick={(e) => {
-          const payload = (e as { activePayload?: Array<{ payload?: { month?: string } }> } | undefined)
-            ?.activePayload?.[0]?.payload;
+          const payload = (
+            e as { activePayload?: Array<{ payload?: { month?: string } }> } | undefined
+          )?.activePayload?.[0]?.payload;
           const month = payload?.month;
           if (month) {
             const label = formatMonthLabel(month);
@@ -225,7 +226,12 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="system" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
+          cursor={cursorFill}
+        />
         <Bar
           dataKey="count"
           fill={CHART.accent}
@@ -262,7 +268,10 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
           labelStyle={tooltipLabelStyle}
           itemStyle={tooltipItemStyle}
           cursor={cursorFill}
-          formatter={(v) => [`${v} bugs (${((Number(v) / total) * 100).toFixed(0)}% of total)`, "Caught"]}
+          formatter={(v) => [
+            `${v} bugs (${((Number(v) / total) * 100).toFixed(0)}% of total)`,
+            "Caught",
+          ]}
         />
         <Bar
           dataKey="count"
@@ -270,7 +279,12 @@ export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
           cursor="pointer"
           onClick={(d) => {
             const env = (d as { stage?: Environment })?.stage;
-            if (env) openFor(`Caught in ${env}`, `Bugs whose environment is ${env}`, (r) => r.environment === env);
+            if (env)
+              openFor(
+                `Caught in ${env}`,
+                `Bugs whose environment is ${env}`,
+                (r) => r.environment === env,
+              );
           }}
         >
           {data.map((d) => (
@@ -298,7 +312,12 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" {...axis} />
         <YAxis type="category" dataKey="reporter" {...axis} width={120} tick={{ fontSize: 10 }} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
+          cursor={cursorFill}
+        />
         <Bar
           dataKey="count"
           fill={CHART.primary}
@@ -306,7 +325,8 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
           cursor="pointer"
           onClick={(d) => {
             const rep = (d as { reporter?: string })?.reporter;
-            if (rep) openFor(`Reporter · ${rep}`, `Bugs logged by ${rep}`, (r) => r.reporter === rep);
+            if (rep)
+              openFor(`Reporter · ${rep}`, `Bugs logged by ${rep}`, (r) => r.reporter === rep);
           }}
         />
       </BarChart>
@@ -330,7 +350,12 @@ export function ComponentChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" {...axis} />
         <YAxis type="category" dataKey="component" {...axis} width={140} tick={{ fontSize: 10 }} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
+          cursor={cursorFill}
+        />
         <Bar
           dataKey="count"
           fill={CHART.accent}
@@ -366,7 +391,10 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
     .slice(0, 12);
 
   return (
-    <ChartCard title="Mean Time to Resolve by Component" subtitle="Average days to resolve · top 12 slowest">
+    <ChartCard
+      title="Mean Time to Resolve by Component"
+      subtitle="Average days to resolve · top 12 slowest"
+    >
       <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
         <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
         <XAxis type="number" {...axis} unit="d" />
@@ -388,7 +416,12 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
           cursor="pointer"
           onClick={(d) => {
             const c = (d as { component?: string })?.component;
-            if (c) openFor(`MTTR · ${c}`, `Resolved bugs in ${c}`, (r) => r.component === c && r.mttr !== null);
+            if (c)
+              openFor(
+                `MTTR · ${c}`,
+                `Resolved bugs in ${c}`,
+                (r) => r.component === c && r.mttr !== null,
+              );
           }}
         />
       </BarChart>
@@ -411,14 +444,20 @@ export function EnvironmentChart({ rows }: { rows: BugRow[] }) {
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
         <XAxis dataKey="env" {...axis} />
         <YAxis {...axis} />
-        <Tooltip contentStyle={tooltipStyle} labelStyle={tooltipLabelStyle} itemStyle={tooltipItemStyle} cursor={cursorFill} />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          labelStyle={tooltipLabelStyle}
+          itemStyle={tooltipItemStyle}
+          cursor={cursorFill}
+        />
         <Bar
           dataKey="count"
           radius={[6, 6, 0, 0]}
           cursor="pointer"
           onClick={(d) => {
             const env = (d as { env?: Environment })?.env;
-            if (env) openFor(`Environment · ${env}`, `Bugs in ${env}`, (r) => r.environment === env);
+            if (env)
+              openFor(`Environment · ${env}`, `Bugs in ${env}`, (r) => r.environment === env);
           }}
         >
           {data.map((d) => (

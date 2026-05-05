@@ -12,11 +12,11 @@ export const CHART = {
   // Canvas chrome: axes, grid, tooltips. Kept deliberately understated so
   // the data series pop against the dark card background.
   // ──────────────────────────────────────────────────────────────────────
-  axis: "#64646e",                        // DARK GREY — axis lines + ticks
-  grid: "rgba(200, 200, 210, 0.15)",       // LIGHT GREY at ~15% — subtle
-  cursor: "rgba(200, 200, 210, 0.08)",     // bar hover highlight
+  axis: "#64646e", // DARK GREY — axis lines + ticks
+  grid: "rgba(200, 200, 210, 0.15)", // LIGHT GREY at ~15% — subtle
+  cursor: "rgba(200, 200, 210, 0.08)", // bar hover highlight
   tooltip: {
-    bg: "oklch(0.22 0.035 254)",           // existing dark card tone
+    bg: "oklch(0.22 0.035 254)", // existing dark card tone
     border: "#64646e",
     label: "#ffffff",
     item: "#c8c8d2",
@@ -26,12 +26,12 @@ export const CHART = {
   // Semantic roles. Use these names in chart code, not raw hex, so a palette
   // swap is painless.
   // ──────────────────────────────────────────────────────────────────────
-  primary: "#0082d9",   // DARK CYAN  — default bars / primary data series
-  accent:  "#00C1FF",   // CYAN       — accent lines, highlight moments
-  deep:    "#034ea2",   // BLUE       — tertiary / secondary data
-  alert:   "#ee236b",   // PINK       — over-target, PROD leaks, P1 critical
-  success: "#53c0a3",   // TEAL       — target reference, DEV (caught early)
-  neutral: "#c8c8d2",   // LIGHT GREY — inactive / placeholder
+  primary: "#0082d9", // DARK CYAN  — default bars / primary data series
+  accent: "#00C1FF", // CYAN       — accent lines, highlight moments
+  deep: "#034ea2", // BLUE       — tertiary / secondary data
+  alert: "#ee236b", // PINK       — over-target, PROD leaks, P1 critical
+  success: "#53c0a3", // TEAL       — target reference, DEV (caught early)
+  neutral: "#c8c8d2", // LIGHT GREY — inactive / placeholder
 
   // ──────────────────────────────────────────────────────────────────────
   // Category palettes. These reuse the semantic roles so two charts showing
@@ -43,9 +43,9 @@ export const CHART = {
     P3: "#034ea2", // BLUE — minor
   },
   environment: {
-    DEV:  "#53c0a3", // TEAL — caught early (ideal)
-    SIT:  "#00C1FF", // CYAN
-    UAT:  "#0082d9", // DARK CYAN
+    DEV: "#53c0a3", // TEAL — caught early (ideal)
+    SIT: "#00C1FF", // CYAN
+    UAT: "#0082d9", // DARK CYAN
     PROD: "#ee236b", // PINK — leaked to production
   },
 } as const;

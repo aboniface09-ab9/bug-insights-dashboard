@@ -27,7 +27,20 @@ const parseDate = (s: string): Date | null => {
   );
   if (jira) {
     const [, d, monStr, y, h = "0", mi = "0", ampm] = jira;
-    const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const mo = months.findIndex((m) => m.toLowerCase() === monStr.toLowerCase());
     if (mo >= 0) {
       let yr = parseInt(y);
@@ -92,11 +105,7 @@ const pick = (row: Record<string, string>, keys: string[]): string => {
 // Collect ALL values across duplicate column names (e.g. multiple "Components").
 // Papa.parse with header:true overwrites duplicates, so we instead read the raw
 // header row and collect all matching column indices ourselves.
-const collectMulti = (
-  headers: string[],
-  rawRow: string[],
-  keys: string[],
-): string[] => {
+const collectMulti = (headers: string[], rawRow: string[], keys: string[]): string[] => {
   const out: string[] = [];
   headers.forEach((h, i) => {
     if (keys.includes(h.trim())) {
@@ -149,8 +158,7 @@ export const parseCsv = (text: string): BugRow[] => {
       const created = parseDate(get(iCreated));
       if (!created) return null;
       const resolved = parseDate(get(iResolved));
-      const system =
-        get(iSystem) || ticketId.split("-")[0]?.toUpperCase() || "UNKNOWN";
+      const system = get(iSystem) || ticketId.split("-")[0]?.toUpperCase() || "UNKNOWN";
       const severity = toSeverity(get(iSeverity));
       const environment = toEnvironment(get(iEnv));
       const month =

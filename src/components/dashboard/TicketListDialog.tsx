@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Copy, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -48,14 +54,20 @@ export function TicketListDialog({ open, onOpenChange, title, subtitle, rows }: 
             {ids.length} {ids.length === 1 ? "ticket" : "tickets"}
           </Badge>
           <Button size="sm" variant="outline" onClick={copyAll} disabled={ids.length === 0}>
-            {copiedAll ? <Check className="mr-1.5 h-3.5 w-3.5" /> : <Copy className="mr-1.5 h-3.5 w-3.5" />}
+            {copiedAll ? (
+              <Check className="mr-1.5 h-3.5 w-3.5" />
+            ) : (
+              <Copy className="mr-1.5 h-3.5 w-3.5" />
+            )}
             {copiedAll ? "Copied" : "Copy all"}
           </Button>
         </div>
 
         <ScrollArea className="max-h-[55vh] pr-3">
           {ids.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">No tickets in this group.</p>
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              No tickets in this group.
+            </p>
           ) : (
             <ul className="divide-y divide-border/60">
               {rows.map((r) => (

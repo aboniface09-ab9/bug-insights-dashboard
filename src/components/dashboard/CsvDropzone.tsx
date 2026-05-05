@@ -80,9 +80,7 @@ export function CsvDropzone({ onLoaded }: Props) {
           <Sparkles className="absolute -right-2 -top-2 h-4 w-4 text-accent animate-pulse" />
         </div>
 
-        <p className="font-display text-2xl font-semibold tracking-tight">
-          Drop your Jira export
-        </p>
+        <p className="font-display text-2xl font-semibold tracking-tight">Drop your Jira export</p>
         <p className="mt-2 max-w-md text-sm text-muted-foreground">
           Drag a CSV here — or click to browse. We'll compute leakage, severity, and MTTR instantly.
         </p>

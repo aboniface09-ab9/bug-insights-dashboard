@@ -12,8 +12,18 @@ export const formatMonthLabel = (ym: string): string => {
   const monthIdx = Number(m[2]) - 1;
   if (monthIdx < 0 || monthIdx > 11) return ym;
   const MONTHS = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
   ];
   return `${MONTHS[monthIdx]} ${year}`;
 };

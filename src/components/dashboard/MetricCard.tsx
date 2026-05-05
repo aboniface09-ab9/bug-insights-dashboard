@@ -40,7 +40,14 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
     .join(" ");
   return (
     <svg width={w} height={h} className="opacity-70">
-      <polyline points={pts} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
@@ -57,7 +64,9 @@ export function MetricCard({ label, value, sub, tone = "default", icon: Icon, tr
         {Icon && <Icon className={`h-3.5 w-3.5 ${toneClass[tone]} opacity-60`} />}
       </div>
       <div className="mt-2 flex items-end justify-between gap-2">
-        <p className={`font-display text-3xl font-semibold tabular-nums leading-none ${toneClass[tone]}`}>
+        <p
+          className={`font-display text-3xl font-semibold tabular-nums leading-none ${toneClass[tone]}`}
+        >
           {value}
         </p>
         {trend && <Sparkline data={trend} color={`oklch(from ${toneStroke[tone]} l c h)`} />}

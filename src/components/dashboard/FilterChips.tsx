@@ -160,9 +160,7 @@ export function FilterChips<T extends string>({
                           onSelect={() => toggle(opt)}
                           className="flex items-center justify-between"
                         >
-                          <span className="truncate">
-                            {renderLabel ? renderLabel(opt) : opt}
-                          </span>
+                          <span className="truncate">{renderLabel ? renderLabel(opt) : opt}</span>
                           {on && <Check className="ml-2 h-3.5 w-3.5 text-primary" />}
                         </CommandItem>
                       );

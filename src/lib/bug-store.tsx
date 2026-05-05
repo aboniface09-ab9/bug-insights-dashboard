@@ -45,8 +45,7 @@ const BugStoreContext = createContext<BugStore | null>(null);
 // localStorage-based summary or pushes in JSON from elsewhere.
 const reviveRow = (r: BugRow): BugRow => ({
   ...r,
-  created:
-    r.created instanceof Date ? r.created : new Date(r.created as unknown as string),
+  created: r.created instanceof Date ? r.created : new Date(r.created as unknown as string),
   resolved: r.resolved
     ? r.resolved instanceof Date
       ? r.resolved
@@ -96,12 +95,8 @@ export function BugStoreProvider({ children }: { children: ReactNode }) {
     setLoadedAt(now);
     const meta: StoredMeta = { filename: name, updatedAt: now, rowCount: next.length };
     // Fire-and-forget persistence — UI already updated.
-    void set(ROWS_KEY, next).catch((err) =>
-      console.warn("bug-store: persist rows failed", err),
-    );
-    void set(META_KEY, meta).catch((err) =>
-      console.warn("bug-store: persist meta failed", err),
-    );
+    void set(ROWS_KEY, next).catch((err) => console.warn("bug-store: persist rows failed", err));
+    void set(META_KEY, meta).catch((err) => console.warn("bug-store: persist meta failed", err));
   }, []);
 
   const reset = useCallback(() => {

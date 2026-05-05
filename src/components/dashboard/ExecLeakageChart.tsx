@@ -36,12 +36,13 @@ const tooltipLabelStyle = {
 };
 const tooltipItemStyle = { color: CHART.tooltip.item };
 
-// Leakage chart lives in the blue family so it reads as a single, calm visual.
-// The TARGET line (pink) does the work of flagging over-target months — bars
-// that poke above it are visually obvious without needing a second hue.
-const COLOR_BAR = CHART.primary; // DARK CYAN  — every bar (regardless of status)
-const COLOR_LINE = CHART.deep; // DEEP BLUE  — running cumulative
-const COLOR_TARGET = CHART.alert; // PINK       — target reference (high contrast)
+// Bars stay in the blue family for a calm primary visual. The cumulative line
+// breaks out of blue (light grey) so it reads as separate from the bars rather
+// than blending in. The TARGET line is green — a positive "this is what you're
+// aiming at" marker rather than a danger colour.
+const COLOR_BAR = CHART.primary; // DARK CYAN   — every bar (regardless of status)
+const COLOR_LINE = CHART.neutral; // LIGHT GREY  — running cumulative (off the blue ladder)
+const COLOR_TARGET = CHART.success; // TEAL/GREEN — target reference
 
 const DEFAULT_TARGET_PCT = 15;
 
@@ -60,16 +61,20 @@ interface Props {
 /**
  * Executive-page leakage trend chart.
  *
- * - Bars: per-month leakage %, all rendered in the same dark-cyan blue. Bars
- *   that poke above the target reference line ARE the over-target signal —
- *   the dashed pink target line draws the eye and bars crossing it read as
- *   obvious without needing a second bar colour.
- * - Line: the running *cumulative* leakage rate (deep blue). At each month the
- *   value reflects overall leakage across every month up to and including that
- *   one. A great month visibly drags the line down; a bad month pulls it up.
- *   The final point equals the headline Leakage Rate KPI shown above.
- * - Reference line: the target threshold (default 15%), drawn thicker and in
- *   pink so it's the first thing the eye locks onto.
+ * - Bars: per-month leakage %, all rendered in the same dark-cyan blue. Whether
+ *   a month "missed" is communicated visually by the bar crossing above the
+ *   target reference line — no second bar colour needed.
+ * - Line: the running *cumulative* leakage rate (light grey, off the blue
+ *   ladder so it doesn't blend with the bars). At each month the value
+ *   reflects overall leakage across every month up to and including that one.
+ *   A great month drags the line down; a bad month pulls it up. The final
+ *   point equals the headline Leakage Rate KPI.
+ * - Reference line: the target threshold (default 15%) drawn in green — a
+ *   positive "aim for this" marker rather than a danger flag. Thicker stroke
+ *   plus persistent label so it's always the first thing the eye locks onto.
+ * - Both compact and full views show the same over/under stat block to the
+ *   right of the title so the headline number is visible whether or not the
+ *   chart is expanded.
  */
 export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact = false }: Props) {
   const { data, overall } = useMemo(() => {
@@ -122,6 +127,31 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
   // Status used both to tint the top accent stripe and colour the KPI footer.
   const onTarget = overall <= targetPct;
   const statusColor = onTarget ? CHART.success : CHART.alert;
+  const statusLabel = onTarget
+    ? `${(targetPct - overall).toFixed(1)}pp under`
+    : `${(overall - targetPct).toFixed(1)}pp over`;
+
+  // Stat block (big number + over/under pill) — rendered to the right of the
+  // title in both compact and full views so the headline reading is always
+  // visible. Compact mode uses a smaller number to fit alongside the chart.
+  const statBlock = (
+    <div className="text-right">
+      <div className="flex items-baseline justify-end gap-1">
+        <span
+          className={`font-display ${compact ? "text-3xl" : "text-4xl"} font-semibold tracking-tight`}
+        >
+          {overall}
+        </span>
+        <span className="font-mono text-xs text-muted-foreground">%</span>
+      </div>
+      <p
+        className="font-mono text-[10px] uppercase tracking-[0.15em]"
+        style={{ color: statusColor }}
+      >
+        {onTarget ? `On target · ${statusLabel}` : statusLabel}
+      </p>
+    </div>
+  );
 
   return (
     <Card
@@ -146,20 +176,7 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="text-right">
-              <div className="flex items-baseline justify-end gap-1">
-                <span className="font-display text-3xl font-semibold tracking-tight">
-                  {overall}
-                </span>
-                <span className="font-mono text-xs text-muted-foreground">%</span>
-              </div>
-              <p
-                className="font-mono text-[10px] uppercase tracking-[0.15em]"
-                style={{ color: statusColor }}
-              >
-                {onTarget ? "On target" : `${(overall - targetPct).toFixed(1)}pp over`}
-              </p>
-            </div>
+            {statBlock}
             <Maximize2 className="h-4 w-4 text-muted-foreground/50" />
           </div>
         </div>
@@ -168,10 +185,11 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
           <div>
             <h3 className="font-display text-base font-semibold">Leakage Rate — Monthly Trend</h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
-              Bars: each month's leakage %. Line: overall rate to date (ends at {overall}%). Dashed
-              pink: {targetPct}% target — any bar above it is a miss.
+              Bars: each month's leakage %. Grey line: overall rate to date (ends at {overall}%).
+              Dashed green: {targetPct}% target — any bar above it is a miss.
             </p>
           </div>
+          {statBlock}
         </div>
       )}
       <div className={compact ? "h-32" : "h-96"}>
@@ -209,9 +227,8 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
               strokeWidth={2.5}
               ifOverflow="extendDomain"
               label={{
-                // Keep the label compact in small mode — just the numeric
-                // target ("15%") next to the line. Full mode gets the longer
-                // "Target 15%" string since there's room.
+                // Always render the target value next to the line — short
+                // "15%" in compact mode, full "Target 15%" in expanded mode.
                 value: compact ? `${targetPct}%` : `Target ${targetPct}%`,
                 position: "insideTopRight",
                 fill: COLOR_TARGET,

@@ -160,28 +160,14 @@ function Dashboard() {
               }}
             />
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Required columns:{" "}
-              <span className="font-mono text-foreground/70">
-                Ticket ID, Created, Resolved, Severity, TJ Environment
-              </span>
+              Required columns: <span className="font-mono text-foreground/70">Ticket ID, Created, Resolved, Severity, TJ Environment</span>
             </p>
           </div>
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-              <MetricCard
-                label="Total Bugs"
-                value={metrics.total.toLocaleString()}
-                icon={Bug}
-                trend={monthlyTrend.total}
-              />
-              <MetricCard
-                label="Prod Bugs"
-                value={metrics.prod.toLocaleString()}
-                tone="critical"
-                icon={AlertOctagon}
-                trend={monthlyTrend.prod}
-              />
+              <MetricCard label="Total Bugs" value={metrics.total.toLocaleString()} icon={Bug} trend={monthlyTrend.total} />
+              <MetricCard label="Prod Bugs" value={metrics.prod.toLocaleString()} tone="critical" icon={AlertOctagon} trend={monthlyTrend.prod} />
               <MetricCard
                 label="Leakage %"
                 value={`${metrics.leakagePct.toFixed(1)}%`}

@@ -137,8 +137,8 @@ function MetricTile({ m }: { m: ExecMetric }) {
           color: m.trendIsGood
             ? "oklch(0.72 0.17 155)"
             : m.trendDirection === "flat"
-              ? "oklch(0.7 0.03 250)"
-              : "oklch(0.65 0.24 25)",
+            ? "oklch(0.7 0.03 250)"
+            : "oklch(0.65 0.24 25)",
         }}
       >
         {m.trend}
@@ -178,8 +178,8 @@ function ExecutiveSummary() {
             Engineering health at a glance
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            The four metrics our exec team tracks. Live data flows in from the Dashboard; metrics
-            tagged <span className="font-mono text-foreground/80">SAMPLE</span> are placeholders
+            The four metrics our exec team tracks. Live data flows in from the Dashboard;
+            metrics tagged <span className="font-mono text-foreground/80">SAMPLE</span> are placeholders
             until their data feed is wired up.
           </p>
         </div>
@@ -226,10 +226,7 @@ function ExecutiveSummary() {
           </p>
           <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-muted-foreground">
             <li>Leakage Rate is calculated live once a Jira CSV is uploaded on the Dashboard.</li>
-            <li>
-              Lead Time, Change Failure Rate and Test Automation Coverage will switch from sample to
-              live values once their data sources are connected.
-            </li>
+            <li>Lead Time, Change Failure Rate and Test Automation Coverage will switch from sample to live values once their data sources are connected.</li>
             <li>All values are quarter-to-date unless stated otherwise.</li>
           </ul>
         </Card>

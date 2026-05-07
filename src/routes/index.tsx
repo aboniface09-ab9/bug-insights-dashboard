@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { RefreshCw, Bug, AlertOctagon, TrendingDown, Flame, Timer, CircleDot } from "lucide-react";
+import { RefreshCw, Bug, AlertOctagon, TrendingDown, Timer, CircleDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Toaster } from "@/components/ui/sonner";
@@ -13,10 +13,9 @@ import {
   EnvironmentChart,
   LeakageTrendChart,
   MttrByComponentChart,
-  QaFunnelChart,
   ReporterChart,
   SeverityChart,
-  SystemChart,
+  TeamsChart,
 } from "@/components/dashboard/Charts";
 import {
   applyFilters,
@@ -160,14 +159,28 @@ function Dashboard() {
               }}
             />
             <p className="mt-6 text-center text-xs text-muted-foreground">
-              Required columns: <span className="font-mono text-foreground/70">Ticket ID, Created, Resolved, Severity, TJ Environment</span>
+              Required columns:{" "}
+              <span className="font-mono text-foreground/70">
+                Ticket ID, Created, Resolved, Severity, TJ Environment
+              </span>
             </p>
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-              <MetricCard label="Total Bugs" value={metrics.total.toLocaleString()} icon={Bug} trend={monthlyTrend.total} />
-              <MetricCard label="Prod Bugs" value={metrics.prod.toLocaleString()} tone="critical" icon={AlertOctagon} trend={monthlyTrend.prod} />
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <MetricCard
+                label="Total Bugs"
+                value={metrics.total.toLocaleString()}
+                icon={Bug}
+                trend={monthlyTrend.total}
+              />
+              <MetricCard
+                label="Prod Bugs"
+                value={metrics.prod.toLocaleString()}
+                tone="critical"
+                icon={AlertOctagon}
+                trend={monthlyTrend.prod}
+              />
               <MetricCard
                 label="Leakage %"
                 value={`${metrics.leakagePct.toFixed(1)}%`}
@@ -175,13 +188,6 @@ function Dashboard() {
                 tone={metrics.leakagePct > 50 ? "critical" : "warning"}
                 icon={TrendingDown}
                 trend={monthlyTrend.leakage}
-              />
-              <MetricCard
-                label="P1 Leakage %"
-                value={`${metrics.p1LeakagePct.toFixed(1)}%`}
-                sub="Critical bugs in PROD"
-                tone={metrics.p1LeakagePct > 30 ? "critical" : "warning"}
-                icon={Flame}
               />
               <MetricCard
                 label="Avg MTTR"
@@ -195,7 +201,7 @@ function Dashboard() {
             <Card className="border-border/60 bg-[var(--gradient-surface)] p-5 shadow-[var(--shadow-card)]">
               <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
                 <FilterChips
-                  label="System"
+                  label="Team"
                   options={options.systems}
                   selected={filters.systems}
                   onChange={(s) => setFilters({ ...filters, systems: s })}
@@ -248,19 +254,23 @@ function Dashboard() {
               </div>
             </Card>
 
+            {/* Layout (top → bottom):
+                  Row 1: Leakage trend (full-width — the headline chart)
+                  Row 2: Severity ⟶ Environment    (the "what" + "where in pipeline")
+                  Row 3: Teams    ⟶ Components     (ownership pair)
+                  Row 4: Reporters ⟶ MTTR         (people / responsiveness pair)
+                Each pair is two complementary views side-by-side, so the page
+                reads as four logical sections rather than seven loose tiles. */}
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="lg:col-span-2">
                 <LeakageTrendChart rows={filtered} />
               </div>
               <SeverityChart rows={filtered} />
-              <SystemChart rows={filtered} />
               <EnvironmentChart rows={filtered} />
-              <QaFunnelChart rows={filtered} />
+              <TeamsChart rows={filtered} />
               <ComponentChart rows={filtered} />
               <ReporterChart rows={filtered} />
-              <div className="lg:col-span-2">
-                <MttrByComponentChart rows={filtered} />
-              </div>
+              <MttrByComponentChart rows={filtered} />
             </div>
 
             {filtered.length === 0 && (

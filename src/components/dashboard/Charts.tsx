@@ -18,7 +18,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { TicketListDialog } from "./TicketListDialog";
 import type { BugRow, Severity, Environment } from "@/lib/bug-data";
-import { CHART } from "@/lib/chart-colors";
+import { CHART, colorForCategory } from "@/lib/chart-colors";
 import { formatMonthLabel } from "@/lib/format";
 
 // All colours come from the shared `CHART` palette — no raw hex/oklch here.
@@ -125,7 +125,7 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
   }, [rows]);
 
   return (
-    <ChartCard title="Leakage Trend" subtitle="% of bugs reaching PROD per month · target 15%">
+    <ChartCard title="Leakage Trend" subtitle="% of bugs reaching PROD per month · target 5%">
       <LineChart
         data={data}
         margin={{ top: 5, right: 10, left: -10, bottom: 0 }}
@@ -150,16 +150,17 @@ export function LeakageTrendChart({ rows }: { rows: BugRow[] }) {
           labelFormatter={(label) => formatMonthLabel(String(label))}
         />
         <ReferenceLine
-          y={15}
+          y={5}
           stroke={CHART.success}
           strokeDasharray="6 4"
-          strokeWidth={1.5}
+          strokeWidth={2.5}
           label={{
-            value: "Target 15%",
+            value: "Target 5%",
             position: "insideTopRight",
             fill: CHART.success,
             fontSize: 11,
             fontFamily: "JetBrains Mono, monospace",
+            fontWeight: 600,
           }}
         />
         <Line
@@ -212,19 +213,23 @@ export function SeverityChart({ rows }: { rows: BugRow[] }) {
   );
 }
 
-export function SystemChart({ rows }: { rows: BugRow[] }) {
+// "System" in the underlying CSV is what TJ actually treats as the product
+// team, so the chart + filter expose this as "Team" to the user. The data
+// field on BugRow stays as `system` because it still maps to Jira's
+// "System" / "Project key" column.
+export function TeamsChart({ rows }: { rows: BugRow[] }) {
   const { openFor, dialog } = useDrillDown(rows);
   const counts = new Map<string, number>();
   rows.forEach((r) => counts.set(r.system, (counts.get(r.system) ?? 0) + 1));
   const data = Array.from(counts.entries())
-    .map(([system, count]) => ({ system, count }))
+    .map(([team, count]) => ({ team, count }))
     .sort((a, b) => b.count - a.count);
 
   return (
-    <ChartCard title="Bugs by System" subtitle="Volume per source system">
+    <ChartCard title="Bugs by Team" subtitle="Volume per product team">
       <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
         <CartesianGrid stroke={grid} strokeDasharray="3 3" vertical={false} />
-        <XAxis dataKey="system" {...axis} />
+        <XAxis dataKey="team" {...axis} />
         <YAxis {...axis} />
         <Tooltip
           contentStyle={tooltipStyle}
@@ -238,59 +243,10 @@ export function SystemChart({ rows }: { rows: BugRow[] }) {
           radius={[6, 6, 0, 0]}
           cursor="pointer"
           onClick={(d) => {
-            const sys = (d as { system?: string })?.system;
-            if (sys) openFor(`System · ${sys}`, `All bugs in ${sys}`, (r) => r.system === sys);
+            const team = (d as { team?: string })?.team;
+            if (team) openFor(`Team · ${team}`, `All bugs in ${team}`, (r) => r.system === team);
           }}
         />
-      </BarChart>
-      {dialog}
-    </ChartCard>
-  );
-}
-
-export function QaFunnelChart({ rows }: { rows: BugRow[] }) {
-  const { openFor, dialog } = useDrillDown(rows);
-  const stages: Environment[] = ["DEV", "SIT", "UAT", "PROD"];
-  const data = stages.map((s) => ({
-    stage: s,
-    count: rows.filter((r) => r.environment === s).length,
-  }));
-  const total = data.reduce((sum, d) => sum + d.count, 0) || 1;
-
-  return (
-    <ChartCard title="QA Funnel" subtitle="Where defects are caught across environments">
-      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 10, bottom: 0 }}>
-        <CartesianGrid stroke={grid} strokeDasharray="3 3" horizontal={false} />
-        <XAxis type="number" {...axis} />
-        <YAxis type="category" dataKey="stage" {...axis} width={50} />
-        <Tooltip
-          contentStyle={tooltipStyle}
-          labelStyle={tooltipLabelStyle}
-          itemStyle={tooltipItemStyle}
-          cursor={cursorFill}
-          formatter={(v) => [
-            `${v} bugs (${((Number(v) / total) * 100).toFixed(0)}% of total)`,
-            "Caught",
-          ]}
-        />
-        <Bar
-          dataKey="count"
-          radius={[0, 6, 6, 0]}
-          cursor="pointer"
-          onClick={(d) => {
-            const env = (d as { stage?: Environment })?.stage;
-            if (env)
-              openFor(
-                `Caught in ${env}`,
-                `Bugs whose environment is ${env}`,
-                (r) => r.environment === env,
-              );
-          }}
-        >
-          {data.map((d) => (
-            <Cell key={d.stage} fill={COLORS[d.stage as Environment]} />
-          ))}
-        </Bar>
       </BarChart>
       {dialog}
     </ChartCard>
@@ -320,7 +276,6 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
         />
         <Bar
           dataKey="count"
-          fill={CHART.primary}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -328,7 +283,11 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
             if (rep)
               openFor(`Reporter · ${rep}`, `Bugs logged by ${rep}`, (r) => r.reporter === rep);
           }}
-        />
+        >
+          {data.map((d) => (
+            <Cell key={d.reporter} fill={colorForCategory(d.reporter)} />
+          ))}
+        </Bar>
       </BarChart>
       {dialog}
     </ChartCard>
@@ -358,14 +317,17 @@ export function ComponentChart({ rows }: { rows: BugRow[] }) {
         />
         <Bar
           dataKey="count"
-          fill={CHART.accent}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
             const c = (d as { component?: string })?.component;
             if (c) openFor(`Component · ${c}`, `Bugs in ${c}`, (r) => r.component === c);
           }}
-        />
+        >
+          {data.map((d) => (
+            <Cell key={d.component} fill={colorForCategory(d.component)} />
+          ))}
+        </Bar>
       </BarChart>
       {dialog}
     </ChartCard>
@@ -411,7 +373,6 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
         />
         <Bar
           dataKey="mttr"
-          fill={CHART.deep}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -423,7 +384,11 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
                 (r) => r.component === c && r.mttr !== null,
               );
           }}
-        />
+        >
+          {data.map((d) => (
+            <Cell key={d.component} fill={colorForCategory(d.component)} />
+          ))}
+        </Bar>
       </BarChart>
       {dialog}
     </ChartCard>

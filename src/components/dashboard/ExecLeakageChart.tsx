@@ -44,7 +44,7 @@ const COLOR_BAR = CHART.primary; // DARK CYAN   — every bar (regardless of sta
 const COLOR_LINE = CHART.neutral; // LIGHT GREY  — running cumulative (off the blue ladder)
 const COLOR_TARGET = CHART.success; // TEAL/GREEN — target reference
 
-const DEFAULT_TARGET_PCT = 15;
+const DEFAULT_TARGET_PCT = 5;
 
 interface Props {
   rows: BugRow[];
@@ -69,7 +69,7 @@ interface Props {
  *   reflects overall leakage across every month up to and including that one.
  *   A great month drags the line down; a bad month pulls it up. The final
  *   point equals the headline Leakage Rate KPI.
- * - Reference line: the target threshold (default 15%) drawn in green — a
+ * - Reference line: the target threshold (default 5%) drawn in green — a
  *   positive "aim for this" marker rather than a danger flag. Thicker stroke
  *   plus persistent label so it's always the first thing the eye locks onto.
  * - Both compact and full views show the same over/under stat block to the

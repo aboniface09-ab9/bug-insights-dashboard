@@ -18,7 +18,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { TicketListDialog } from "./TicketListDialog";
 import type { BugRow, Severity, Environment } from "@/lib/bug-data";
-import { CHART, colorForCategory } from "@/lib/chart-colors";
+import { CHART } from "@/lib/chart-colors";
 import { formatMonthLabel } from "@/lib/format";
 
 // All colours come from the shared `CHART` palette — no raw hex/oklch here.
@@ -276,6 +276,7 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
         />
         <Bar
           dataKey="count"
+          fill={CHART.accent}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -283,11 +284,7 @@ export function ReporterChart({ rows }: { rows: BugRow[] }) {
             if (rep)
               openFor(`Reporter · ${rep}`, `Bugs logged by ${rep}`, (r) => r.reporter === rep);
           }}
-        >
-          {data.map((d) => (
-            <Cell key={d.reporter} fill={colorForCategory(d.reporter)} />
-          ))}
-        </Bar>
+        />
       </BarChart>
       {dialog}
     </ChartCard>
@@ -317,17 +314,14 @@ export function ComponentChart({ rows }: { rows: BugRow[] }) {
         />
         <Bar
           dataKey="count"
+          fill={CHART.accent}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
             const c = (d as { component?: string })?.component;
             if (c) openFor(`Component · ${c}`, `Bugs in ${c}`, (r) => r.component === c);
           }}
-        >
-          {data.map((d) => (
-            <Cell key={d.component} fill={colorForCategory(d.component)} />
-          ))}
-        </Bar>
+        />
       </BarChart>
       {dialog}
     </ChartCard>
@@ -373,6 +367,7 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
         />
         <Bar
           dataKey="mttr"
+          fill={CHART.accent}
           radius={[0, 6, 6, 0]}
           cursor="pointer"
           onClick={(d) => {
@@ -384,11 +379,7 @@ export function MttrByComponentChart({ rows }: { rows: BugRow[] }) {
                 (r) => r.component === c && r.mttr !== null,
               );
           }}
-        >
-          {data.map((d) => (
-            <Cell key={d.component} fill={colorForCategory(d.component)} />
-          ))}
-        </Bar>
+        />
       </BarChart>
       {dialog}
     </ChartCard>

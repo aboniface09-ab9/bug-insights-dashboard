@@ -50,35 +50,4 @@ export const CHART = {
     UAT: "#0082d9", // DARK CYAN
     PROD: "#ee236b", // PINK — leaked to production
   },
-
-  // ──────────────────────────────────────────────────────────────────────
-  // Free-form category palette. Use for charts where the bars / segments
-  // represent open-ended buckets (component names, reporter names, etc.).
-  // Colours are picked from the brand palette + brand-adjacent extensions
-  // so every bar still reads as TJ.
-  // ──────────────────────────────────────────────────────────────────────
-  categories: [
-    "#0082d9", // dark cyan
-    "#00C1FF", // bright cyan
-    "#034ea2", // deep blue
-    "#53c0a3", // teal
-    "#ee236b", // pink
-    "#7c5fe6", // brand-adjacent indigo
-    "#f5a623", // amber accent
-    "#3aa6a0", // muted teal
-  ] as const,
 } as const;
-
-/**
- * Deterministic name → category colour. The same input always returns the
- * same colour, so a given component (or reporter) reads in one shade across
- * every chart that uses this helper.
- */
-export function colorForCategory(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    // FNV-ish: enough uniformity for a small palette, no need for crypto.
-    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
-  }
-  return CHART.categories[hash % CHART.categories.length];
-}

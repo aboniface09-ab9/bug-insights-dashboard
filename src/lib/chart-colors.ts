@@ -51,3 +51,20 @@ export const CHART = {
     PROD: "#ee236b", // PINK — leaked to production
   },
 } as const;
+
+/**
+ * Status banding for the leakage value vs its target. Anchored at the default
+ * 5% target but accepts an override so the same helper works for both the
+ * Executive tile and the compact chart's stat block — guaranteeing they pick
+ * the same colour for the same number.
+ *
+ *   ≤ targetPct          → green   (on target)
+ *   ≤ 2 × targetPct      → amber   (drifting, within 2× target)
+ *   > 2 × targetPct      → red     (well over)
+ */
+export function leakageStatus(pct: number, targetPct = 5): { accent: string; label: string } {
+  if (pct <= targetPct) return { accent: "oklch(0.72 0.17 155)", label: "On target" };
+  if (pct <= targetPct * 2)
+    return { accent: "oklch(0.78 0.17 70)", label: "Drifting · within 2× target" };
+  return { accent: "oklch(0.65 0.24 25)", label: "Well over target" };
+}

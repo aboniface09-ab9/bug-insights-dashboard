@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { computeMetrics } from "@/lib/bug-data";
+import { leakageStatus } from "@/lib/chart-colors";
 import { useBugStore } from "@/lib/bug-store";
 import { ExecLeakageChart } from "@/components/dashboard/ExecLeakageChart";
 
@@ -52,24 +53,6 @@ interface ExecMetric {
     measurement: string;
     notes?: string[];
   };
-}
-
-// Status colour bands for the Defect Leakage value, anchored on a 5% target:
-//   ≤ 5%   → green   (on target)
-//    5–10% → amber   (drifting)
-//    > 10% → red     (well over)
-// Returned in oklch so they sit cleanly alongside the existing theme tokens.
-function leakageStatus(pct: number): { accent: string; valueColor: string; label: string } {
-  if (pct <= 5) {
-    const c = "oklch(0.72 0.17 155)"; // success / green
-    return { accent: c, valueColor: c, label: "On target" };
-  }
-  if (pct <= 10) {
-    const c = "oklch(0.78 0.17 70)"; // warning / amber
-    return { accent: c, valueColor: c, label: "Drifting · within 2× target" };
-  }
-  const c = "oklch(0.65 0.24 25)"; // critical / red
-  return { accent: c, valueColor: c, label: "Well over target" };
 }
 
 // Five metrics tracked per the exco brief. Wording on each tile is lifted
@@ -282,7 +265,7 @@ function ClickableMetricTile({ m }: { m: ExecMetric }) {
         <button
           type="button"
           aria-label={`Expand ${m.label}`}
-          className="block w-full cursor-pointer rounded-xl text-left outline-none ring-offset-background transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
+          className="block h-full w-full cursor-pointer rounded-xl text-left outline-none ring-offset-background transition hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
         >
           <MetricTile m={m} />
         </button>
@@ -301,7 +284,7 @@ function ClickableMetricTile({ m }: { m: ExecMetric }) {
 // without duplicating the JSX.
 function MetricTile({ m }: { m: ExecMetric }) {
   return (
-    <Card className="relative overflow-hidden border-border/60 bg-[var(--gradient-surface)] p-6 shadow-[var(--shadow-card)]">
+    <Card className="relative h-full overflow-hidden border-border/60 bg-[var(--gradient-surface)] p-6 shadow-[var(--shadow-card)]">
       <div className="absolute inset-x-0 top-0 h-0.5" style={{ background: m.accent }} />
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-3">
@@ -370,7 +353,7 @@ function ExecutiveSummary() {
         trend: `${status.label} · ${live.total.toLocaleString()} bugs analysed`,
         trendIsGood: live.leakagePct <= 5,
         accent: status.accent,
-        valueColor: status.valueColor,
+        valueColor: status.accent,
       };
     }
     return m;

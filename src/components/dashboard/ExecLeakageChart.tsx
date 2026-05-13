@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { Card } from "@/components/ui/card";
 import type { BugRow } from "@/lib/bug-data";
-import { CHART } from "@/lib/chart-colors";
+import { CHART, leakageStatus } from "@/lib/chart-colors";
 import { formatMonthLabel } from "@/lib/format";
 
 // All colour decisions live in `@/lib/chart-colors`. Keep this file free of
@@ -124,21 +124,25 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
     );
   }
 
-  // Status used both to tint the top accent stripe and colour the KPI footer.
-  const onTarget = overall <= targetPct;
-  const statusColor = onTarget ? CHART.success : CHART.alert;
-  const statusLabel = onTarget
-    ? `${(targetPct - overall).toFixed(1)}pp under`
-    : `${(overall - targetPct).toFixed(1)}pp over`;
+  // Banded status — shared with the Defect Leakage tile on the Executive page
+  // via the leakageStatus helper, so the chart's stat block and the tile next
+  // to it never disagree on what colour to show.
+  //   ≤ 5%   → green   (on target)
+  //    5–10% → amber   (drifting)
+  //    > 10% → red     (well over)
+  const status = leakageStatus(overall, targetPct);
+  const statusColor = status.accent;
 
-  // Stat block (big number + over/under pill) — rendered to the right of the
+  // Stat block (big number + status pill) — rendered to the right of the
   // title in both compact and full views so the headline reading is always
-  // visible. Compact mode uses a smaller number to fit alongside the chart.
+  // visible. The value itself picks up the status colour, mirroring the
+  // Defect Leakage tile on the Executive page.
   const statBlock = (
     <div className="text-right">
       <div className="flex items-baseline justify-end gap-1">
         <span
           className={`font-display ${compact ? "text-3xl" : "text-4xl"} font-semibold tracking-tight`}
+          style={{ color: statusColor }}
         >
           {overall}
         </span>
@@ -148,16 +152,16 @@ export function ExecLeakageChart({ rows, targetPct = DEFAULT_TARGET_PCT, compact
         className="font-mono text-[10px] uppercase tracking-[0.15em]"
         style={{ color: statusColor }}
       >
-        {onTarget ? `On target · ${statusLabel}` : statusLabel}
+        {status.label}
       </p>
     </div>
   );
 
   return (
     <Card
-      className={`relative overflow-hidden border-border/60 bg-[var(--gradient-surface)] ${
-        compact ? "p-5" : "p-6"
-      } shadow-[var(--shadow-card)] ${compact ? "transition-transform hover:-translate-y-0.5" : ""}`}
+      className={`relative h-full overflow-hidden border-border/60 bg-[var(--gradient-surface)] p-6 shadow-[var(--shadow-card)] ${
+        compact ? "transition-transform hover:-translate-y-0.5" : ""
+      }`}
     >
       {/* Top accent stripe in compact mode — matches the metric cards so the
           chart tile reads as one of the KPI family rather than a standalone. */}

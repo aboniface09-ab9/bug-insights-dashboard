@@ -53,9 +53,7 @@ const EMPTY_FILTERS: Filters = {
 function Dashboard() {
   // Rows + filename now live in a root-level store so they survive route
   // changes (Dashboard <-> Executive) and full page reloads (via IndexedDB).
-  // `source` tells us whether the current data came from the auto-loaded
-  // /data/latest.csv feed or from a user drag-and-drop upload.
-  const { rows, filename, source, hydrated, setData, reset: resetStore } = useBugStore();
+  const { rows, filename, hydrated, setData, reset: resetStore } = useBugStore();
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
 
   const options = useMemo(() => {
@@ -114,18 +112,8 @@ function Dashboard() {
   const headerRight =
     rows.length > 0 ? (
       <>
-        {/* Source pill — green dot for the auto-loaded data feed, amber for
-            a custom upload. Lets the user tell at a glance whether they're
-            looking at the canonical snapshot or their own ad-hoc CSV. */}
         <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 sm:flex">
-          <CircleDot
-            className={`h-3 w-3 ${source === "feed" ? "text-[var(--success)]" : "text-[var(--warning)]"}`}
-          />
-          <span className="font-mono text-[11px] text-muted-foreground">
-            {source === "feed" ? "Live data feed" : "Custom upload"}
-          </span>
-        </div>
-        <div className="hidden items-center gap-2 rounded-full border border-border/60 bg-card/60 px-3 py-1.5 sm:flex">
+          <CircleDot className="h-3 w-3 text-[var(--success)]" />
           <span className="font-mono text-[11px] text-muted-foreground">
             {filtered.length.toLocaleString()} / {rows.length.toLocaleString()} bugs
           </span>
@@ -141,7 +129,10 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Toaster theme="dark" />
-      <AppHeader rightSlot={headerRight} badge="Defect leakage · QA effectiveness · Phase 1" />
+      <AppHeader
+        rightSlot={headerRight}
+        badge="Lead time · deploy freq · leakage · CFR · automation"
+      />
 
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         {!hydrated ? (

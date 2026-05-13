@@ -34,10 +34,10 @@ export function AppHeader({ rightSlot, badge }: Props) {
           </div>
           <div>
             <h1 className="font-display text-lg font-semibold leading-none tracking-tight">
-              Bug Quality Dashboard
+              Product Delivery Metrics Dashboard
             </h1>
             <p className="mt-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              {badge ?? "Defect leakage · QA effectiveness"}
+              {badge ?? "Engineering delivery metrics"}
             </p>
           </div>
         </div>

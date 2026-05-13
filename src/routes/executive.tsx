@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { TrendingDown, Clock, AlertTriangle, ShieldCheck, Sparkles } from "lucide-react";
+import { TrendingDown, Clock, AlertTriangle, ShieldCheck, Sparkles, Rocket } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/executive")({
       {
         name: "description",
         content:
-          "At-a-glance executive view of defect leakage, lead time for changes, change failure rate and test automation coverage.",
+          "At-a-glance executive view of lead time for changes, deployment frequency, defect leakage, change failure rate and test automation coverage.",
       },
     ],
   }),
@@ -42,15 +42,24 @@ interface ExecMetric {
   accent: string;
 }
 
+// Five metrics tracked per the exco brief. Wording on each tile is lifted
+// straight from the brief so the dashboard reads in the same language as the
+// document the team is being measured against. Targets:
+//   - Defect leakage:               < 5%
+//   - Change failure rate:          < 10%
+//   - Test automation coverage:     > 70%
+//   - Lead time for changes:        short-term Medium (1wk–1mo), stretched High (1d–1wk)
+//   - Deployment frequency:         monthly cadence, platform-dependent
 const metrics: ExecMetric[] = [
   {
-    label: "Leakage Rate",
+    label: "Defect Leakage",
     value: "—",
     unit: "%",
     trend: "Live · upload data on Dashboard",
     trendDirection: "flat",
     trendIsGood: true,
-    description: "% of defects that reach production. Lower is better.",
+    description:
+      "% of defects reaching PROD. Measures testing & review effectiveness. Target < 5%.",
     icon: TrendingDown,
     isSample: false,
     accent: "oklch(0.65 0.24 25)",
@@ -59,22 +68,34 @@ const metrics: ExecMetric[] = [
     label: "Lead Time for Changes",
     value: "2.3",
     unit: "days",
-    trend: "↓ 0.4d vs last quarter",
+    trend: "Short-term: Medium (1wk–1mo) · Stretched: High (1d–1wk)",
     trendDirection: "down",
     trendIsGood: true,
-    description: "Time from commit to production. Shorter = faster delivery.",
+    description: "Time from code committed to live in production. Indicates delivery efficiency.",
     icon: Clock,
     isSample: true,
     accent: "oklch(0.72 0.18 235)",
   },
   {
+    label: "Deployment Frequency",
+    value: "8",
+    unit: "/month",
+    trend: "Measured monthly · platform dependent (Switch vs TJPay)",
+    trendDirection: "flat",
+    trendIsGood: true,
+    description: "How often successful releases reach production.",
+    icon: Rocket,
+    isSample: true,
+    accent: "oklch(0.7 0.18 280)",
+  },
+  {
     label: "Change Failure Rate",
     value: "12",
     unit: "%",
-    trend: "↑ 2pp vs last quarter",
+    trend: "Target < 10% · balances speed with stability",
     trendDirection: "up",
     trendIsGood: false,
-    description: "% of deployments causing a failure in production.",
+    description: "% of deployments causing incidents, rollbacks or hotfixes.",
     icon: AlertTriangle,
     isSample: true,
     accent: "oklch(0.78 0.17 70)",
@@ -83,10 +104,10 @@ const metrics: ExecMetric[] = [
     label: "Test Automation Coverage",
     value: "68",
     unit: "%",
-    trend: "↑ 5pp vs last quarter",
+    trend: "Target > 70% · automation enables speed without sacrificing quality",
     trendDirection: "up",
     trendIsGood: true,
-    description: "% of regression cases covered by automated tests.",
+    description: "% of system covered by automated tests.",
     icon: ShieldCheck,
     isSample: true,
     accent: "oklch(0.72 0.17 155)",
@@ -137,8 +158,8 @@ function MetricTile({ m }: { m: ExecMetric }) {
           color: m.trendIsGood
             ? "oklch(0.72 0.17 155)"
             : m.trendDirection === "flat"
-            ? "oklch(0.7 0.03 250)"
-            : "oklch(0.65 0.24 25)",
+              ? "oklch(0.7 0.03 250)"
+              : "oklch(0.65 0.24 25)",
         }}
       >
         {m.trend}
@@ -154,12 +175,12 @@ function ExecutiveSummary() {
   const live = useMemo(() => (rows.length > 0 ? computeMetrics(rows) : null), [rows]);
 
   const resolved: ExecMetric[] = metrics.map((m) => {
-    if (m.label === "Leakage Rate" && live) {
+    if (m.label === "Defect Leakage" && live) {
       return {
         ...m,
         value: live.leakagePct.toFixed(1),
-        trend: `Live · ${live.total.toLocaleString()} bugs analysed`,
-        trendIsGood: live.leakagePct <= 15,
+        trend: `Live · ${live.total.toLocaleString()} bugs analysed · target < 5%`,
+        trendIsGood: live.leakagePct <= 5,
       };
     }
     return m;
@@ -167,7 +188,7 @@ function ExecutiveSummary() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader badge="For executive review · key engineering metrics" />
+      <AppHeader badge="Performance metrics for exco review" />
 
       <main className="mx-auto max-w-[1400px] px-6 py-8">
         <div className="mb-6">
@@ -175,20 +196,25 @@ function ExecutiveSummary() {
             ▸ Executive Summary
           </p>
           <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight">
-            Engineering health at a glance
+            Tracking performance at every level
           </h2>
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            The four metrics our exec team tracks. Live data flows in from the Dashboard;
-            metrics tagged <span className="font-mono text-foreground/80">SAMPLE</span> are placeholders
-            until their data feed is wired up.
+          <p className="mt-3 max-w-3xl text-sm text-muted-foreground">
+            Tracking the performance of the company, of departments in support of company
+            performance, and of teams and individuals — starting small to ensure company-wide
+            understanding of our success.
+          </p>
+          <p className="mt-3 max-w-3xl text-xs text-muted-foreground/80">
+            Live data flows in from the Dashboard; metrics tagged{" "}
+            <span className="font-mono text-foreground/80">SAMPLE</span> are placeholders until
+            their data feeds are wired up.
           </p>
         </div>
 
-        {/* Row 1: Leakage Rate card + its monthly trend chart, side-by-side.
-            Row 2: the other three KPI cards. This keeps everything visible
-            without scrolling while pairing the chart with the metric it shows. */}
+        {/* Row 1: Defect Leakage KPI tile + its monthly trend chart side-by-side.
+            Row 2: the remaining four KPI tiles in a single row so the whole set
+            of metrics is visible without scrolling. */}
         <div className="grid gap-5 md:grid-cols-2">
-          {/* Leakage Rate metric card (first item in `resolved`) */}
+          {/* Defect Leakage metric card (first item in `resolved`) */}
           {resolved.slice(0, 1).map((m) => (
             <MetricTile key={m.label} m={m} />
           ))}
@@ -198,14 +224,14 @@ function ExecutiveSummary() {
             <DialogTrigger asChild>
               <button
                 type="button"
-                aria-label="Expand leakage rate chart"
+                aria-label="Expand defect leakage chart"
                 className="block w-full cursor-pointer rounded-xl text-left outline-none ring-offset-background transition focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2"
               >
                 <ExecLeakageChart rows={rows} compact />
               </button>
             </DialogTrigger>
             <DialogContent className="max-w-5xl border-border/60 bg-[var(--gradient-surface)]">
-              <DialogTitle className="sr-only">Leakage Rate — Monthly Trend</DialogTitle>
+              <DialogTitle className="sr-only">Defect Leakage — Monthly Trend</DialogTitle>
               <DialogDescription className="sr-only">
                 Per-month leakage % with running cumulative rate and target reference line.
               </DialogDescription>
@@ -214,7 +240,7 @@ function ExecutiveSummary() {
           </Dialog>
         </div>
 
-        <div className="mt-5 grid gap-5 md:grid-cols-3">
+        <div className="mt-5 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           {resolved.slice(1).map((m) => (
             <MetricTile key={m.label} m={m} />
           ))}
@@ -225,8 +251,11 @@ function ExecutiveSummary() {
             Notes
           </p>
           <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-muted-foreground">
-            <li>Leakage Rate is calculated live once a Jira CSV is uploaded on the Dashboard.</li>
-            <li>Lead Time, Change Failure Rate and Test Automation Coverage will switch from sample to live values once their data sources are connected.</li>
+            <li>Defect Leakage is calculated live once a Jira CSV is loaded on the Dashboard.</li>
+            <li>
+              Lead Time, Deployment Frequency, Change Failure Rate and Test Automation Coverage will
+              switch from sample to live values once their data sources are connected.
+            </li>
             <li>All values are quarter-to-date unless stated otherwise.</li>
           </ul>
         </Card>
